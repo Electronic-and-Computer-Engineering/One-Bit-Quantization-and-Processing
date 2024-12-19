@@ -1,6 +1,7 @@
 import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
+from scipy.signal import get_window
 
 import sys
 sys.path.append('../../01_Library')
@@ -8,7 +9,7 @@ sys.path.append('../../01_Library')
 import sg, sa, sp, obq, filt
 
 
-def fullOptDFT(vx, vW, sK):
+def OptDFT(vx, vW, sK):
     """
     Args:
         vx: Input vector.
@@ -41,45 +42,50 @@ def fullOptDFT(vx, vW, sK):
     vRIFw_x = np.hstack((vFw_x.real, vFw_x.imag))
     mRIFw   = np.vstack((mFw.real, mFw.imag))
     
+    ## Term 1 multiplication
+    vRIFW_mRIFw = vRIFw_x.T @ mRIFw
+    ## Term 2 multiplication
+    mRIFw_RIFw  = mRIFw.T @ mRIFw
+    
     vRIE    = np.zeros((len(vRIFw_x),1)).flatten()
     
-    #vx_ps = np.linalg.inv(vRIFw_x.T @ vRIFw_x) @ mRIFw.T @ vRIFw_x
     # GUROBI
     #Mixed-Integer Quadratically Constrained Quadratic Programming (MIQP)
     model = gp.Model("MIQCP")
 
-    model.setParam("TimeLimit", 20)  # Increase numerical focus
-    model.setParam("VarBranch", 3) 
-    model.setParam("MIPFocus", 3)  # Shift focus to finding good feasible solutions quickly
-    model.setParam("Heuristics", 0.3)  # Increase heuristic efforts
-    model.setParam("Presolve", 2)  # More aggressive presolve
+    model.setParam("TimeLimit", 5)  # Increase numerical focus  
+    #model.setParam("VarBranch", 3) 
+    #model.setParam("MIPFocus", 0)  # Shift focus to finding good feasible solutions quickly
+    #model.setParam("Heuristics", 0.9)  # Increase heuristic efforts
+    #model.setParam("Presolve", 2)  # More aggressive presolve
     #model.setParam("Cuts", 3)  # More aggressive cut generation
-    model.setParam("MIPGap", 1e-05)
-    #model.setParam("TuneTimeLimit", 2400)
+    #model.setParam("MIPGap", 1e-12)
+    model.setParam("TuneTimeLimit", 3600)
     
     # Decision variables (vb) as binary, mapped to {-1, 1} in the objective
     vb = model.addVars(sN, vtype=gp.GRB.BINARY, name="vb")
     
-    #for j in range(sN):
-    #     vb[j].Start = bInit[j]
+    for j in range(sN):
+         vb[j].Start = bInit[j]
     
     model.update()
 
     # Objective function
     obj = gp.QuadExpr()
     
-    for i in range(mRIFw.shape[0]):  # Rows of vRIE
-        se = 0
-        se = gp.quicksum(
-            mRIFw[i,j]*(2*vb[j] - 1) for j in range(mRIFw.shape[1])
-            )
-        
-        obj += (vRIFw_x[i] - se) * (vRIFw_x[i] - se)
+    # Linear term: -2 * vRIFW_mRIFw * (2 * vb - 1)
+    for i in range(sN):
+        obj.add(-2 * vRIFW_mRIFw[i] * (2 * vb[i] - 1)) 
+    # Quadratic term: (2 * vb[i] - 1) * mRIFw_RIFw[i,j] * (2 * vb[j] - 1)
+    for i in range(sN):
+        for j in range(sN):
+            if mRIFw_RIFw[i, j] != 0:  # Only include non-zero terms
+                obj.add(mRIFw_RIFw[i, j] * (2 * vb[i] - 1) * (2 * vb[j] - 1))
     
     # Set the objective
     model.setObjective(obj, GRB.MINIMIZE)
     
-    model.optimize()
+    model.tune()
 
     # Output the solution
     if model.status == gp.GRB.OPTIMAL:

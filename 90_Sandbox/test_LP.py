@@ -25,20 +25,19 @@ import sg, sa, sp, obq, filt
 
 mtplt.close('all')
 
-sNbins = 64 
-sK     = sNbins   
-sBSize = 16
-
-#sHop = sBSize
+sNbins = 2048 
+sK     = 64   
+sBSize = 64
+sHop   = 16
 
 # %% [markdown]
 # Generate input signal
-sNewSignal = True
+sNewSignal = False
 # %%
 ### Signal generation ###
 if sNewSignal:
-    sFs = 64
-    sSigFmax = 24
+    sFs = 128
+    sSigFmax = 23
     vxFrequ = (np.arange(0, sSigFmax, step=2)).reshape(-1, 1)
     vxPhase = np.random.rand(len(vxFrequ), 1) * 2 * np.pi
 
@@ -64,7 +63,7 @@ vRIdeal, vW = filt.idealBinFilt(sNbins, sg.freq2Bin(sSigFmax, sNbins, sFs), sMin
 mRIdeal = scLinAlg.toeplitz(vRIdeal)
 
 sFpb        = sSigFmax
-sFsb        = sFpb + 16
+sFsb        = sFpb + 5
 sApbdB      = 0.001
 sAsbdB      = 40
 
@@ -79,9 +78,9 @@ mSigDeltaFilt = np.tril(mOnes)
 # Quantize the input signal
 nU, vW = filt.idealBinFilt(sK, sg.freq2Bin(sSigFmax, sK, sFs), sMinBin=None, sType='lowpass', full=True)
 
-vBSequSingle = obq.fullOptDFT(vx, vW, sK)
+vBDFT = obq.iterBlockQDFT(vx, vW, sBSize, sK, 16)
 print("Single-Iterative solution found!")
-np.save('saves/vBSequSingle.npy', vBSequSingle)
+np.save('saves/vBDFT.npy', vBDFT)
 
 vCoeffZ, mLobes = sa.detZC(vWcoeff, None)
 vPruning, sPrunIdx  = sp.enLobePruning(vWcoeff, mLobes, 0.1, 8, True)
@@ -99,7 +98,7 @@ vBSequBlock, vEL2, vBlockIdx = obq.iterBlockQ(vx, vWcoeffcut, sBSize, 'grb')
 vX = np.fft.fft(mRIdeal @ vx)
 vXMag = 20*sa.safelog10(np.abs(vX) / np.max(abs(vX)))
 
-vBfft = np.fft.fft(vBSequSingle,sNbins)
+vBfft = np.fft.fft(vBDFT,sNbins)
 vBfftMag = 20*sa.safelog10(np.abs(vBfft) / np.max(abs(vX))) 
 
 vBBlockfft = np.fft.fft(vBSequBlock,sNbins)
@@ -117,7 +116,7 @@ vBlockRecMag = 20*sa.safelog10(np.abs(vBlockRec) / np.max(abs(vX)))
 vDiffSingle = vX - vBfft
 vDiffSingleMag = 20*sa.safelog10(np.abs(vDiffSingle) / np.max(abs(vDiffSingle))) 
 
-vSingleRec = np.fft.fft(mRIdeal @ vBSequSingle, sNbins)
+vSingleRec = np.fft.fft(mRIdeal @ vBDFT, sNbins)
 vSingleRecMag = 20*sa.safelog10(np.abs(vSingleRec) / np.max(abs(vX))) 
 
 # Frequency bins
@@ -129,12 +128,12 @@ vFreq = np.fft.fftfreq(sNbins, sT)
 # Filtered Signals
 vxSigFiltIdeal           = mRIdeal @ vx
 vxErrFiltIdeal           = mRIdeal @ (vx-vx)
-vbSequErrFiltIdeal       = mRIdeal @ (vx-vBSequSingle)
+vbSequErrFiltIdeal       = mRIdeal @ (vx-vBDFT)
 vbBlockSequErrFiltIdeal  = mRIdeal @ (vx-vBSequBlock)
 
 vxSigFilt           = np.convolve(vWcoeff,vx,'same')
 vxErrFilt           = np.convolve(vWcoeff,(vx-vx),'same')
-vbSequErrFilt       = np.convolve(vWcoeff,(vx-vBSequSingle),'same')
+vbSequErrFilt       = np.convolve(vWcoeff,(vx-vBDFT),'same')
 vbBlockSequErrFilt  = np.convolve(vWcoeff,(vx-vBSequBlock),'same')
 
 sVX_MSEIdeal, sVX_SNRdbIdeal, sVX_PSNRdbIdeal = sa.evalN(vxErrFiltIdeal, vxSigFiltIdeal)
@@ -165,7 +164,7 @@ mtplt.grid(True, which='both', linestyle='--', linewidth=0.3, color='gray')
 pltObsOne = figOne.add_subplot(Pltgs[1,0])
 pltObsOne.plot(vFreq[:sNbins // 2], vDiffSingleMag[:sNbins // 2])
 #pltObsOne.plot(sFiltst, vWLs[sFiltst], 'rx', markersize=6, markeredgewidth=2)
-pltObsOne.set_title('Difference Signal SingleSequ')
+pltObsOne.set_title('Difference Signal DFT')
 pltObsOne.set_xlabel('Frequency $(Hz)$', fontsize = 11)
 pltObsOne.set_ylabel('Magnitude $(dB)$', fontsize = 11)
 pltObsOne.set_xlim([0,sFs/2])
@@ -175,7 +174,7 @@ mtplt.grid(True, which='both', linestyle='--', linewidth=0.3, color='gray')
 
 pltObsTwo = figOne.add_subplot(Pltgs[1,1])
 pltObsTwo.plot(vFreq[:sNbins // 2], vDiffBlockMag[:sNbins // 2])
-pltObsTwo.set_title('Difference Signal Block Optimization')
+pltObsTwo.set_title('Difference Signal Block Optimization (ISCAS24)')
 pltObsTwo.set_xlabel('Frequency $(Hz)$', fontsize = 11)
 pltObsTwo.set_ylabel('Magnitude $(dB)$', fontsize = 11)
 pltObsTwo.set_xlim([0,sFs/2])
@@ -185,7 +184,7 @@ mtplt.grid(True, which='both', linestyle='--', linewidth=0.3, color='gray')
 
 pltFreqOne = figOne.add_subplot(Pltgs[2,0])
 pltFreqOne.plot(vFreq[:sNbins // 2], vBfftMag[:sNbins // 2])
-pltFreqOne.set_title('Frequency Spectrum SDQ SER: {snr} dB\nFrequency Spectrum SDQ Ideal: {snr_ideal} dB'.format(snr=round(sVB_SNRdb, 2), snr_ideal=round(sVB_SNRdbIdeal, 2)))
+pltFreqOne.set_title('Frequency Spectrum DFTQ SER: {snr} dB\nFrequency Spectrum DFTQ Ideal: {snr_ideal} dB'.format(snr=round(sVB_SNRdb, 2), snr_ideal=round(sVB_SNRdbIdeal, 2)))
 pltFreqOne.set_xlabel('Frequency $(Hz)$', fontsize = 11)
 pltFreqOne.set_ylabel('Magnitude $(dB)$', fontsize = 11)
 pltFreqOne.set_xlim([0,sFs/2])
@@ -195,7 +194,7 @@ mtplt.grid(True, which='both', linestyle='--', linewidth=0.3, color='gray')
 
 pltFreqTwo = figOne.add_subplot(Pltgs[2,1])
 pltFreqTwo.plot(vFreq[:sNbins // 2], vBBlockfftMag[:sNbins // 2])
-pltFreqTwo.set_title('Frequency Spectrum BOBQ SER: {snr} dB\nFrequency Spectrum BOBQ Ideal: {snr_ideal} dB'.format(snr=round(sVBBlock_SNRdb, 2), snr_ideal=round(sVBBlock_SNRdbIdeal, 2)))
+pltFreqTwo.set_title('Frequency Spectrum BOBQ(ISCAS24) SER: {snr} dB\nFrequency Spectrum BOBQ(ISCAS24) Ideal: {snr_ideal} dB'.format(snr=round(sVBBlock_SNRdb, 2), snr_ideal=round(sVBBlock_SNRdbIdeal, 2)))
 pltFreqTwo.set_xlabel('Frequency $(Hz)$', fontsize = 11)
 pltFreqTwo.set_ylabel('Magnitude $(dB)$', fontsize = 11)
 mtplt.minorticks_on()
@@ -227,12 +226,12 @@ Pltgs2 = gridspec.GridSpec(2, 1)
 # (2,1) Spectrum of the difference signal vDiffSingleMag with overlay of vSingleRecMag
 pltCompSDQ = figTwo.add_subplot(Pltgs2[0,0])
 #pltCompSDQ.plot(vFreq[:sNbins // 2] / (sFs / sNbins) * np.pi, vBfftMag[:sNbins // 2], color='black', label='SDQ', linewidth=1.5)
-pltCompSDQ.plot(vNormFrequ[:sNbins // 2], vBfftMag[:sNbins // 2], color='black', label='SDQ, SER: {snr_ideal} dB'.format(snr_ideal=round(sVB_SNRdbIdeal, 2)), linewidth=1.5)
+pltCompSDQ.plot(vNormFrequ[:sNbins // 2], vBfftMag[:sNbins // 2], color='black', label='DFTQ, SER: {snr_ideal} dB'.format(snr_ideal=round(sVB_SNRdbIdeal, 2)), linewidth=1.5)
 #pltCompSDQ.set_title(r'Frequency Spectrum', fontsize=13)
 pltCompSDQ.set_ylabel(r'Magnitude (dB)', fontsize=13)
 pltCompSDQ.set_xlim([0, np.pi])
 pltCompSDQ.set_ylim([-60, 5])
-txtStr = 'SDQ, SER: {snr_ideal} dB'.format(snr_ideal=round(sVB_SNRdbIdeal, 2))
+txtStr = 'DFTQ, SER: {snr_ideal} dB'.format(snr_ideal=round(sVB_SNRdbIdeal, 2))
 pltCompSDQ.text(1.75, -45, txtStr, fontsize=13, verticalalignment='top', bbox=props)
 pltCompSDQ.minorticks_on()
 pltCompSDQ.grid(True, which='both', linestyle='--', linewidth=0.3, color='gray')
@@ -242,12 +241,12 @@ pltCompSDQ.set_xticklabels(xtick_labels, fontsize=13)
 
 pltCompOBBQ = figTwo.add_subplot(Pltgs2[1,0])
 #pltCompOBBQ.plot(vFreq[:sNbins // 2] / (sFs / sNbins) * np.pi, vBBlockfftMag[:sNbins // 2], color='black', label='OBBQ', linewidth=1.5)
-pltCompOBBQ.plot(vNormFrequ[:sNbins // 2], vBBlockfftMag[:sNbins // 2], color='black', label='OBBQ, SER: {snr_ideal} dB'.format(snr_ideal=round(sVBBlock_SNRdbIdeal, 2)), linewidth=1.5)
+pltCompOBBQ.plot(vNormFrequ[:sNbins // 2], vBBlockfftMag[:sNbins // 2], color='black', label='OBBQ(ISCAS24), SER: {snr_ideal} dB'.format(snr_ideal=round(sVBBlock_SNRdbIdeal, 2)), linewidth=1.5)
 #pltCompOBBQ.set_title(r'Frequency Spectrum OBBQ, SER: {snr_ideal} dB'.format(snr_ideal=round(sVBBlock_SNRdbIdeal, 2)), fontsize=14)
 pltCompOBBQ.set_ylabel(r'Magnitude (dB)', fontsize=13)
 pltCompOBBQ.set_xlim([0, np.pi])
 pltCompOBBQ.set_ylim([-60, 5])
-txtStr = 'OBBQ, SER: {snr_ideal} dB'.format(snr_ideal=round(sVBBlock_SNRdbIdeal, 2))
+txtStr = 'OBBQ(ISCAS24), SER: {snr_ideal} dB'.format(snr_ideal=round(sVBBlock_SNRdbIdeal, 2))
 pltCompOBBQ.text(1.75, -45, txtStr, fontsize=13, verticalalignment='top', bbox=props)
 pltCompOBBQ.minorticks_on()
 pltCompOBBQ.grid(True, which='both', linestyle='--', linewidth=0.3, color='gray')
@@ -272,12 +271,12 @@ Pltgs2 = gridspec.GridSpec(2, 1)
 # (2,1) Spectrum of the difference signal vDiffSingleMag with overlay of vSingleRecMag
 pltCompSDQd = figThree.add_subplot(Pltgs2[0,0])
 #pltCompSDQd.plot(vFreq[:sNbins // 2] / (sFs / sNbins) * np.pi, vDiffSingleMag[:sNbins // 2], color='black', label='SDQ', linewidth=1.5)
-pltCompSDQd.plot(vNormFrequ[:sNbins // 2], vDiffSingleMag[:sNbins // 2], color='black', label='SDQ, SER: {snr_ideal} dB'.format(snr_ideal=round(sVB_SNRdbIdeal, 2)), linewidth=1.5)
+pltCompSDQd.plot(vNormFrequ[:sNbins // 2], vDiffSingleMag[:sNbins // 2], color='black', label='DFTQ, SER: {snr_ideal} dB'.format(snr_ideal=round(sVB_SNRdbIdeal, 2)), linewidth=1.5)
 #pltCompSDQd.set_title(r'Difference Spectrum', fontsize=13)
 pltCompSDQd.set_ylabel(r'Magnitude (dB)', fontsize=13)
 pltCompSDQd.set_xlim([0, np.pi])
 pltCompSDQd.set_ylim([-60, 5])
-txtStr = 'SDQ, SER: {snr_ideal} dB'.format(snr_ideal=round(sVB_SNRdbIdeal, 2))
+txtStr = 'DFTQ, SER: {snr_ideal} dB'.format(snr_ideal=round(sVB_SNRdbIdeal, 2))
 pltCompSDQd.text(1.75, -45, txtStr, fontsize=13, verticalalignment='top', bbox=props)
 pltCompSDQd.minorticks_on()
 pltCompSDQd.grid(True, which='both', linestyle='--', linewidth=0.3, color='gray')
@@ -286,12 +285,12 @@ pltCompSDQd.set_xticklabels(xtick_labels, fontsize=13)
 
 pltCompOBBQd = figThree.add_subplot(Pltgs2[1,0])
 #pltCompOBBQd.plot(vFreq[:sNbins // 2] / (sFs / sNbins) * np.pi, vDiffBlockMag[:sNbins // 2], color='black', label='OBBQ', linewidth=1.5)
-pltCompOBBQd.plot(vNormFrequ[:sNbins // 2], vDiffBlockMag[:sNbins // 2], color='black', label='OBBQ, SER: {snr_ideal} dB'.format(snr_ideal=round(sVBBlock_SNRdbIdeal, 2)), linewidth=1.5)
+pltCompOBBQd.plot(vNormFrequ[:sNbins // 2], vDiffBlockMag[:sNbins // 2], color='black', label='OBBQ(ISCAS24), SER: {snr_ideal} dB'.format(snr_ideal=round(sVBBlock_SNRdbIdeal, 2)), linewidth=1.5)
 #pltCompOBBQd.set_title(r'Difference Spectrum OBBQ, SER: {snr_ideal} dB'.format(snr_ideal=round(sVBBlock_SNRdbIdeal, 2)), fontsize=14)
 pltCompOBBQd.set_ylabel(r'Magnitude (dB)', fontsize=13)
 
 pltCompOBBQd.set_ylim([-60, 5])
-txtStr = 'OBBQ, SER: {snr_ideal} dB'.format(snr_ideal=round(sVBBlock_SNRdbIdeal, 2))
+txtStr = 'OBBQ(ISCAS24), SER: {snr_ideal} dB'.format(snr_ideal=round(sVBBlock_SNRdbIdeal, 2))
 pltCompOBBQd.text(1.75, -45, txtStr, fontsize=13, verticalalignment='top', bbox=props)
 pltCompOBBQd.minorticks_on()
 pltCompOBBQd.grid(True, which='both', linestyle='--', linewidth=0.3, color='gray')
