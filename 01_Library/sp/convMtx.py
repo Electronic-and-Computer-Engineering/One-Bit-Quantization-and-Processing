@@ -30,7 +30,7 @@ def convMtx(vCoeffs, sNbins, sType):
                 mConvM[i, i:i+sL] = vCoeffs
             elif sType == 'colWise':
                 mConvM[i:i+sL,i] = vCoeffs.T
-        mConvM = mConvM[:, :sNbins]
+        mConvM = mConvM[:sNbins, :sNbins]
 
     elif ((sType == 'rowWiseNN') | (sType == 'colWiseNN')):
         for i in range(sNbins+sL-1):

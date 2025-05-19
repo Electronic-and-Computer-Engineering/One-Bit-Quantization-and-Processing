@@ -61,11 +61,11 @@ def OptBlock(vx, mW, vCe):
 
     # Output the solution
     if model.status == GRB.OPTIMAL:
-        print(f"Optimal solution found. ({model.SolCount})", end=" ")
+        outTxt = f"Optimal solution found. ({model.SolCount})"
     else:
-        print(f"No Optimal solution found. ({model.SolCount})", end=" ")
+        outTxt = f"No Optimal solution found. ({model.SolCount})"
 
     vb_out = np.array([2 * vb[j].X - 1 for j in range(nVars)])  # Extract optimized solution
     ve = mW @ (vx - vb_out) + vCe  # Updated error considering the optimization
     
-    return vb_out, ve
+    return vb_out, ve, outTxt

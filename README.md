@@ -1,3 +1,17 @@
+---
+title: "TEST"
+author: brettljausn
+date: January 15, 2018
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: flase
+      smooth_scroll: true
+    toc_depth: 3
+    number_sections: true
+    theme: lumen
+---
 # Research Overview: One-Bit Quantization and Processing
 
 ## Introduction

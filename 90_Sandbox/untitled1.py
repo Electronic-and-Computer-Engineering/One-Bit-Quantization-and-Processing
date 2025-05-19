@@ -1,91 +1,122 @@
 import numpy as np
-from gurobipy import Model, GRB, quicksum
+import matplotlib.pyplot as plt
+import sys
+sys.path.append('../01_Library')
+# individual packages
+import sg, sa, sp, obq, filt 
 
-def compute_reduced_coeffs(N):
+def dftMat(N, K, range=None, normalize=False, unit='rad'):
     """
-    Compute reduced cosine and sine coefficient matrices for FFT.
-    Only stores the first half of coefficients.
-    
+    Constructs a complex-valued DFT matrix (K x N) for full or partial spectrum analysis.
+
     Parameters:
-    - N: Signal length.
-    
+    ----------
+    N : int
+        Length of time-domain signal (number of columns).
+    K : int
+        Number of frequency bins (number of rows).
+    range : array-like of shape (2,), optional
+        Frequency interval [low, high].
+        If None: uses full range [0, 2π) (in rad/sample).
+    unit : str, optional
+        Unit of the range: 'rad' (radians, default) or 'f' (normalized frequency in [0, 1]).
+    normalize : bool, optional
+        If True, applies 1/√N normalization (Parseval-compatible).
+
     Returns:
-    - cos_coeffs: Reduced cosine coefficients (N/2 x N).
-    - sin_coeffs: Reduced sine coefficients (N/2 x N).
+    -------
+    F : ndarray of shape (K, N)
+        Complex-valued DFT matrix.
+    omega_k : ndarray of shape (K,)
+        Frequency grid (in rad/sample) corresponding to the rows of F.
     """
-    frequencies = np.arange(N // 2 + 1)  # Only compute for first half
-    cos_coeffs = np.cos(2 * np.pi * np.outer(frequencies, np.arange(N)) / N)
-    sin_coeffs = np.sin(2 * np.pi * np.outer(frequencies, np.arange(N)) / N)
-    return cos_coeffs, sin_coeffs
 
-def gurobi_fft_reduced(signal, N):
-    """
-    Computes FFT using reduced cosine and sine coefficient matrices in Gurobi.
-    
-    Parameters:
-    - signal: Input binary signal (list or NumPy array).
-    - N: Length of the signal (zero-padded if necessary).
-    
-    Returns:
-    - real_part: Real part of FFT components (list).
-    - imag_part: Imaginary part of FFT components (list).
-    """
-    # Zero-pad the signal if necessary
-    signal = np.pad(signal, (0, max(0, N - len(signal))), mode='constant')
+    n = np.arange(N)  # time indices
 
-    # Compute reduced cosine and sine coefficients
-    cos_coeffs, sin_coeffs = compute_reduced_coeffs(N)
+    if range is None:
+        # Full-band DFT (uniformly spaced over [0, 2π))
+        omega_k = 2 * np.pi * np.arange(K) / K
+    else:
+        range = np.asarray(range)
+        if range.shape != (2,):
+            raise ValueError("range must be a 2-element array-like: [low, high]")
 
-    # Create Gurobi model
-    model = Model("FFT_Reduced")
-    model.setParam('OutputFlag', 0)  # Suppress Gurobi output
+        if unit == 'f':
+            range = 2 * np.pi * range
+        elif unit != 'rad':
+            raise ValueError("unit must be either 'rad' or 'f'")
 
-    # Create variables for FFT components
-    real_part = model.addVars(N // 2 + 1, lb=-GRB.INFINITY, name="Re")
-    imag_part = model.addVars(N // 2 + 1, lb=-GRB.INFINITY, name="Im")
+        omega_k = np.linspace(range[0], range[1], K)
 
-    # Define constraints for the first half of FFT components
-    for k in range(N // 2 + 1):
-        model.addConstr(
-            real_part[k] == quicksum(signal[n] * cos_coeffs[k, n] for n in range(N)),
-            name=f"Re_{k}",
-        )
-        model.addConstr(
-            imag_part[k] == quicksum(signal[n] * sin_coeffs[k, n] for n in range(N)),
-            name=f"Im_{k}",
-        )
+    F = np.exp(-1j * np.outer(omega_k, n))  # shape: (K, N)
 
-    # Add dummy objective
-    model.setObjective(0, GRB.MINIMIZE)
+    if normalize:
+        F /= np.sqrt(N)
 
-    # Solve the model
-    model.optimize()
+    return F, omega_k
 
-    # Extract results for the first half
-    real_values = [real_part[k].x for k in range(N // 2 + 1)]
-    imag_values = [imag_part[k].x for k in range(N // 2 + 1)]
+# Signalparameter
+sFs = 128
+sNbins = 4096
+sBSize = 64
+sHop = 4
+sSigFmax = 50
+sK = 512
 
-    # Use symmetry to compute the full FFT
-    full_real = real_values + real_values[1:-1][::-1]
-    full_imag = imag_values + [-x for x in imag_values[1:-1][::-1]]
+vLPRangeFs      = [5, sSigFmax]
+vLPfilterRad    = sg.freq2rad(vLPRangeFs, sFs)
+vMaxVal         = [1.0, 0.0]
 
-    return np.array(full_real), np.array(full_imag)
+# Generiere Signal
+vxFrequ         = (np.arange(0, sSigFmax, step=2)).reshape(-1, 1)
+vxPhase         = np.random.rand(len(vxFrequ), 1) * 2 * np.pi
+v_n             = np.arange(sNbins).reshape(-1, 1)
+vx, vTime       = sg.signalGen(v_n, vxFrequ, vxPhase, sFs, 'real')
+vx              = sg.MFnormalize(vx, -1, 1).flatten()
 
-# Example usage
-binary_signal = [1, -1, 1, -1]
-desired_length = 4
+# Zero Padding am Anfang
+vx_padded       = np.concatenate([np.zeros(sBSize), vx])
+nBlocks         = (len(vx_padded) - sBSize) // sHop
 
-# Compute FFT using reduced coefficients
-gurobi_real, gurobi_imag = gurobi_fft_reduced(binary_signal, desired_length)
+# DFT
 
-# Compute FFT using NumPy
-np_signal = np.pad(binary_signal, (0, max(0, desired_length - len(binary_signal))), mode='constant')
-np_fft = np.fft.fft(np_signal)
-np_real = np.real(np_fft)
-np_imag = np.imag(np_fft)
+mDFT,_ = dftMat(sBSize, sK, vLPfilterRad)
+vFreq = np.fft.fftfreq(sK, d=1/sFs)
 
-# Compare results
-print("NumPy FFT Real:", np_real)
-print("NumPy FFT Imag:", np_imag)
-print("Gurobi FFT Real:", gurobi_real)
-print("Gurobi FFT Imag:", gurobi_imag)
+# Plot Setup
+block_idx = [0]
+fig, ax = plt.subplots()
+line, = ax.plot([], [], lw=2)
+ax.set_xlim(0, sFs / 2)
+ax.set_ylim(0, 1.1)
+ax.set_xlabel("Frequenz [Hz]")
+ax.set_ylabel("Betrag der DFT")
+ax.set_title("Leertaste für nächsten Block – ESC zum Beenden")
+
+def plot_next_block(event):
+    if event.key == 'escape':
+        plt.close(fig)
+        return
+    if event.key != ' ':
+        return
+
+    idx = block_idx[0]
+    sStart = idx * sHop
+    sEnd = sStart + sBSize
+    if sEnd > len(vx_padded):
+        print("Ende erreicht.")
+        plt.close(fig)
+        return
+
+    block = vx_padded[sStart:sEnd]
+    X = mDFT @ block
+    X_mag = np.abs(X) / np.max(np.abs(X))
+
+    line.set_data(vFreq, X_mag)
+    ax.set_title(f"Block {sStart}:{sEnd} (DFT via Matrix)")
+    fig.canvas.draw()
+    block_idx[0] += 1
+
+fig.canvas.mpl_connect('key_press_event', plot_next_block)
+plt.show()
+

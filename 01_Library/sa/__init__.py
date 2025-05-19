@@ -5,3 +5,4 @@ from .vecAn        import vecAn
 from .detZC        import detZC
 from .cRadix2FFT   import cRadix2FFT
 from .dftTrans     import dftTrans
+from .pltNormFft   import pltNormFft

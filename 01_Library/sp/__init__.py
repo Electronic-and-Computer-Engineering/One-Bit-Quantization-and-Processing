@@ -7,3 +7,4 @@ from .enPruning      import enPruning
 from .threshPruning  import threshPruning
 from .enLobePruning  import enLobePruning
 from .bitRevOrder    import bitRevOrder
+from .diag_multiply  import diag_multiply

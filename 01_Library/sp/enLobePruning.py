@@ -70,7 +70,7 @@ def enLobePruning(vCoeffs, tLobes, sETh=0.1, sBSize=2, bStartAtGrad=False):
         vPrunCoeffs = vPrunCoeffs[vPrunCoeffs != 0]
         sPrunIdx    = sPrunOffset
         
-    plotLobePruning(vCoeffs, vPrunCoeffs, tLobes, tLobeEnSorted, vSortedUsedLobes, sPrunIdx, bPlot=True)
+    plotLobePruning(vCoeffs, vPrunCoeffs, tLobes, tLobeEnSorted, vSortedUsedLobes, sPrunIdx, bPlot=False)
     # Return the pruned coefficients and the starting index (sPrunIdx)
     return vPrunCoeffs, sPrunIdx
 

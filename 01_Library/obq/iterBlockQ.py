@@ -2,7 +2,7 @@ import numpy as np
 #Linear Algebraic, signal processing
 import scipy.linalg as scLinAlg
 import scipy.signal as sigP
-import obq, misc
+import obq, misc, globalTools
 
 def iterBlockQ(vx, vw, sM, sType):
     """
@@ -16,8 +16,8 @@ def iterBlockQ(vx, vw, sM, sType):
         vb: Quantized one-bit vector
         ve: Error vector
     """
+   
     swLen = len(vw)
-    #swLen_h = int(swLen/2)
     sxLen = len(vx)
     
     ve = np.zeros((sxLen,1)).flatten()         
@@ -27,8 +27,6 @@ def iterBlockQ(vx, vw, sM, sType):
     vwFull[0:swLen] = vw
     
     sNumBlocks = int(np.ceil(sxLen/sM))
-
-    #vxPadded = np.pad(vx,(sCutSIdx,(sCutEIdx + additionalPadding)), mode = "reflect")
 
     vC          = np.zeros((sM,1)).flatten()
     vbBlock     = np.zeros((sM,1)).flatten() 
@@ -40,7 +38,10 @@ def iterBlockQ(vx, vw, sM, sType):
         print("vx should be a multiple of sM")
     else:
         mW_0 = np.tril(scLinAlg.toeplitz(vwFull[0:sM]))
-        for m in range(sNumBlocks):                                   
+        for m in range(sNumBlocks):
+            if m == 0:
+                progressBlock = globalTools.SimpleProgressBar(sNumBlocks, width=40, prefix = "BlockOptimization (ISCAS25)", fill="█", empty=" ", end=" ✓")
+                            
             vCe = vC.copy()     #Initialize ve_hat before we actually proceed with the error calculation
             sStIdx = m * sM
             sEndIdx = sStIdx + sM
@@ -54,7 +55,7 @@ def iterBlockQ(vx, vw, sM, sType):
                 vCe += mW_m @ (vx[k*sM:k*sM+sM] - vb[k*sM:k*sM+sM])
             
             if (sType == 'grb'):
-                vbBlock, veBlock = obq.OptBlock(vx[m*sM:m*sM+sM], mW_0, vCe)                
+                vbBlock, veBlock, outTxt = obq.OptBlock(vx[m*sM:m*sM+sM], mW_0, vCe)                
             else:
                 vbBlock, veBlock = obq.combOptBlock(vx[m*sM:m*sM+sM], mW_0, vCe)    
                 
@@ -64,7 +65,9 @@ def iterBlockQ(vx, vw, sM, sType):
                 veL2Block[m] = veL2Block[m-1] + np.sum(veBlock**2)
             else:
                 veL2Block[m] = np.sum(veBlock**2)
-                
-            print("BlockNumber: %d, ErrVal: %3.5f" % (m, veL2Block[m]))  
+            
+            progressBlock.update(m+1, outTxt)
+            
+            #print("BlockNumber: %d, ErrVal: %3.5f" % (m, veL2Block[m]))  
         
     return vb, veL2Block, vBlockIdx

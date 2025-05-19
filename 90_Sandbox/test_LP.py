@@ -16,19 +16,23 @@ from scipy.fftpack import hilbert
 mtplt.rcParams['mathtext.fontset'] = 'stix'
 mtplt.rcParams['font.family'] = 'STIXGeneral'
 
-
 # %%
 import sys
 sys.path.append('../01_Library')
 # individual packages
-import sg, sa, sp, obq, filt
+import sg, sa, sp, obq, filt 
+from globalTools import *
 
 mtplt.close('all')
 
-sNbins = 2048 
-sK     = 64   
-sBSize = 64
-sHop   = 16
+sNbins    = 2048
+ 
+sBSizeDFT = 48 #32
+sHop      = 16 #16
+sLock     = 16
+sK        = 3 *(512)   
+
+sBSize = 16
 
 # %% [markdown]
 # Generate input signal
@@ -36,8 +40,8 @@ sNewSignal = False
 # %%
 ### Signal generation ###
 if sNewSignal:
-    sFs = 128
-    sSigFmax = 23
+    sFs = 1024
+    sSigFmax = 47
     vxFrequ = (np.arange(0, sSigFmax, step=2)).reshape(-1, 1)
     vxPhase = np.random.rand(len(vxFrequ), 1) * 2 * np.pi
 
@@ -62,8 +66,11 @@ vx = sg.MFnormalize(vx, -1, 1)
 vRIdeal, vW = filt.idealBinFilt(sNbins, sg.freq2Bin(sSigFmax, sNbins, sFs), sMinBin=None, sType='lowpass', full=True)
 mRIdeal = scLinAlg.toeplitz(vRIdeal)
 
+vRIdealt, vW = filt.idealBinFilt(sNbins//2, sg.freq2Bin(sSigFmax, sNbins//2, sFs), sMinBin=None, sType='lowpass', full=True)
+mRIdealt = scLinAlg.toeplitz(vRIdealt)
+
 sFpb        = sSigFmax
-sFsb        = sFpb + 5
+sFsb        = sFpb + 40
 sApbdB      = 0.001
 sAsbdB      = 40
 
@@ -76,9 +83,10 @@ mSigDeltaFilt = np.tril(mOnes)
 
 # %% [markdown]
 # Quantize the input signal
-nU, vW = filt.idealBinFilt(sK, sg.freq2Bin(sSigFmax, sK, sFs), sMinBin=None, sType='lowpass', full=True)
+nU, vW = filt.idealBinFilt(sK, sg.freq2Bin(sSigFmax+1, sK, sFs), sMinBin=None, sType='lowpass', full=True, maxval=1.0, minval=0)
 
-vBDFT = obq.iterBlockQDFT(vx, vW, sBSize, sK, 16)
+vBDFT = obq.iterBlockQDFT(vx, vW, sBSizeDFT, sLock, sHop, 'grb', verbose=True)
+vBDFTcut = vBDFT[sNbins//4:-(sNbins//4)]
 print("Single-Iterative solution found!")
 np.save('saves/vBDFT.npy', vBDFT)
 
@@ -86,10 +94,10 @@ vCoeffZ, mLobes = sa.detZC(vWcoeff, None)
 vPruning, sPrunIdx  = sp.enLobePruning(vWcoeff, mLobes, 0.1, 8, True)
 vWcoeffcut = vWcoeff[sPrunIdx+1::]
 
-filt.plotFrequResp(vw, vH, sFs, sFpb, sFsb, sHpbMin, sHpbMax, sHsbMax, None, None, 'lowpass')
-filt.anAndPlotK(vWcoeffcut, sFs, sFpb, sFsb, None, None, 'lowpass')
-mtplt.tight_layout()
-mtplt.pause(1)
+#filt.plotFrequResp(vw, vH, sFs, sFpb, sFsb, sHpbMin, sHpbMax, sHsbMax, None, None, 'lowpass')
+#filt.anAndPlotK(vWcoeffcut, sFs, sFpb, sFsb, None, None, 'lowpass')
+#mtplt.tight_layout()
+#mtplt.pause(1)
               
 #vBSequBlock, vEL2, vBlockIdx = obq.iterBlockQnew(vx, vWcoeffcut, sBSize, 'grb')
 vBSequBlock, vEL2, vBlockIdx = obq.iterBlockQ(vx, vWcoeffcut, sBSize, 'grb')
@@ -100,6 +108,9 @@ vXMag = 20*sa.safelog10(np.abs(vX) / np.max(abs(vX)))
 
 vBfft = np.fft.fft(vBDFT,sNbins)
 vBfftMag = 20*sa.safelog10(np.abs(vBfft) / np.max(abs(vX))) 
+
+vBfftcut = np.fft.fft(vBDFTcut,sNbins)
+vBfftMagcut = 20*sa.safelog10(np.abs(vBfftcut) / np.max(abs(vX))) 
 
 vBBlockfft = np.fft.fft(vBSequBlock,sNbins)
 vBBlockfftMag = 20*sa.safelog10(np.abs(vBBlockfft) / np.max(abs(vX))) 
@@ -114,7 +125,10 @@ vBlockRec = np.fft.fft(mRIdeal @ vBSequBlock, sNbins)
 vBlockRecMag = 20*sa.safelog10(np.abs(vBlockRec) / np.max(abs(vX))) 
 
 vDiffSingle = vX - vBfft
-vDiffSingleMag = 20*sa.safelog10(np.abs(vDiffSingle) / np.max(abs(vDiffSingle))) 
+vDiffSingleMag = 20*sa.safelog10(np.abs(vDiffSingle) / np.max(abs(vDiffSingle)))
+
+vDiffSingleCut = vX - vBfftcut
+vDiffSingleMagCut = 20*sa.safelog10(np.abs(vDiffSingleCut) / np.max(abs(vDiffSingleCut)))  
 
 vSingleRec = np.fft.fft(mRIdeal @ vBDFT, sNbins)
 vSingleRecMag = 20*sa.safelog10(np.abs(vSingleRec) / np.max(abs(vX))) 
@@ -129,19 +143,23 @@ vFreq = np.fft.fftfreq(sNbins, sT)
 vxSigFiltIdeal           = mRIdeal @ vx
 vxErrFiltIdeal           = mRIdeal @ (vx-vx)
 vbSequErrFiltIdeal       = mRIdeal @ (vx-vBDFT)
+vbSequErrFiltIdealCut    = mRIdealt @ (vx[sNbins//4:-(sNbins//4)]-vBDFTcut)
 vbBlockSequErrFiltIdeal  = mRIdeal @ (vx-vBSequBlock)
 
 vxSigFilt           = np.convolve(vWcoeff,vx,'same')
 vxErrFilt           = np.convolve(vWcoeff,(vx-vx),'same')
 vbSequErrFilt       = np.convolve(vWcoeff,(vx-vBDFT),'same')
+vbSequErrFiltCut    = np.convolve(vWcoeff,(vx[sNbins//4:-(sNbins//4)]-vBDFTcut),'same')
 vbBlockSequErrFilt  = np.convolve(vWcoeff,(vx-vBSequBlock),'same')
 
 sVX_MSEIdeal, sVX_SNRdbIdeal, sVX_PSNRdbIdeal = sa.evalN(vxErrFiltIdeal, vxSigFiltIdeal)
 sVB_MSEIdeal, sVB_SNRdbIdeal, sVB_PSNRdbIdeal = sa.evalN(vbSequErrFiltIdeal, vxSigFiltIdeal)
+sVB_MSEIdealCut, sVB_SNRdbIdealCut, sVB_PSNRdbIdealCut = sa.evalN(vbSequErrFiltCut, vxSigFiltIdeal)
 sVBBlock_MSEIdeal, sVBBlock_SNRdbIdeal, sVBBlock_PSNRdbIdeal = sa.evalN(vbBlockSequErrFiltIdeal, vxSigFiltIdeal)    
     
 sVX_MSE, sVX_SNRdb, sVX_PSNRdb = sa.evalN(vxErrFilt, vxSigFilt)
 sVB_MSE, sVB_SNRdb, sVB_PSNRdb = sa.evalN(vbSequErrFilt, vxSigFilt)
+sVB_MSECut, sVB_SNRdbCut, sVB_PSNRdbCut = sa.evalN(vbSequErrFiltCut, vxSigFilt)
 sVBBlock_MSE, sVBBlock_SNRdb, sVBBlock_PSNRdb = sa.evalN(vbBlockSequErrFilt, vxSigFilt)
 
 # %% [markdown]
@@ -225,7 +243,6 @@ figTwo = mtplt.figure(figsize=(width_inch,height_cm))
 Pltgs2 = gridspec.GridSpec(2, 1)
 # (2,1) Spectrum of the difference signal vDiffSingleMag with overlay of vSingleRecMag
 pltCompSDQ = figTwo.add_subplot(Pltgs2[0,0])
-#pltCompSDQ.plot(vFreq[:sNbins // 2] / (sFs / sNbins) * np.pi, vBfftMag[:sNbins // 2], color='black', label='SDQ', linewidth=1.5)
 pltCompSDQ.plot(vNormFrequ[:sNbins // 2], vBfftMag[:sNbins // 2], color='black', label='DFTQ, SER: {snr_ideal} dB'.format(snr_ideal=round(sVB_SNRdbIdeal, 2)), linewidth=1.5)
 #pltCompSDQ.set_title(r'Frequency Spectrum', fontsize=13)
 pltCompSDQ.set_ylabel(r'Magnitude (dB)', fontsize=13)
