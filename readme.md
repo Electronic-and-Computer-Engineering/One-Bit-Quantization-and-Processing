@@ -49,7 +49,7 @@ where $B(\omega) = \text{DTFT}\{\underline{b}\}$.
 The robustness of one-bit quantization depends on its adaptability across varying signal types and environmental conditions. Optimality criteria can differ based on the target application, hence quantization frameworks must accommodate diverse and dynamic requirements while maintaining low complexity and high fidelity.
 
 ## References
-<sub>
+<small>
 
 [1] Z. Li et al., *A survey on one-bit compressed sensing: theory and applications*, Frontiers of Computer Science, vol. 12, no. 2, 2018.
 [2] P. T. Boufounos and R. G. Baraniuk, *1-Bit Compressive Sensing*, IEEE CISS, 2008.
@@ -76,7 +76,7 @@ The robustness of one-bit quantization depends on its adaptability across varyin
 [23] B. F. Logan, *Click Modulation*, AT&T Bell Laboratories Technical Journal, vol. 63, no. 3, 1984.
 [24] F. Chierchie and E. E. Paolini, *Digital Distortion-Free PWM and Click Modulation*, IEEE TCAS-II, vol. 65, no. 3, 2018.
 [25] L. Stefanazzi et al., *Click Modulation: An Off-Line Implementation*, MWSCAS, 2008.
-</sub>
+</small>
 
 ------------------------
 ## Acknowledgement
