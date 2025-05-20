@@ -96,22 +96,40 @@ This research is funded by the Austrian Science Fund (FWF) [10.55776/DFH 5] with
 ## References
 
 [1] Z. Li, W. Xu, X. Zhang, and J. Lin, "A survey on one-bit compressed sensing: theory and applications," *Frontiers of Computer Science*, vol. 12, no. 2, pp. 217–230, 2018. [Online]. Available: https://doi.org/10.1007/s11704-017-6132-7
+
 [2] P. T. Boufounos and R. G. Baraniuk, "1-Bit compressive sensing," in *Proc. 42nd Annual Conf. Information Sciences and Systems (CISS)*, Princeton, NJ, USA, Mar. 2008, pp. 16–21. [Online]. Available: https://doi.org/10.1109/CISS.2008.4558487
+
 [3] S. Khobahi, N. Naimipour, M. Soltanalian, and Y. C. Eldar, "Deep Signal Recovery with One-Bit Quantization," in *Proc. ICASSP*, May 2019, pp. 2987–2991.
+
 [4] S. Khobahi and M. Soltanalian, "Model-Based Deep Learning for One-Bit Compressive Sensing," *IEEE Transactions on Signal Processing*, vol. 68, pp. 5292–5307, 2020.
+
 [5] D. Reefman and E. Janssen, "One-bit Audio: An Overview," *Journal of the Audio Engineering Society*, vol. 52, Mar. 2004.
+
 [6] J. D. Reiss, "Understanding Sigma-Delta Modulation: The Solved and Unsolved Issues," *AES: Journal of the Audio Engineering Society*, vol. 56, no. 1, 2008.
+
 [7] S. M. Kershaw and M. B. Sandler, "Sigma-delta modulation for audio DSP," in *IEE Colloquium on Audio DSP – Circuits and Systems*, 1993, pp. 1/1–1/6.
+
 [8] K. Hausmair, S. Chi, P. Singerl, and C. Vogel, "Aliasing-Free Digital Pulse-Width Modulation for Burst-Mode RF Transmitters," *IEEE Transactions on Circuits and Systems I*, vol. 60, no. 2, pp. 415–427, Feb. 2013. [Online]. Available: https://doi.org/10.1109/TCSI.2012.2215776
+
 [9] K. Hausmair, P. Singerl, and C. Vogel, "Multiplierless Implementation of an Aliasing-Free Digital Pulsewidth Modulator," *IEEE Transactions on Circuits and Systems II*, vol. 60, no. 9, pp. 592–596, Sep. 2013. [Online]. Available: https://doi.org/10.1109/TCSII.2013.2268431
+
 [10] K. Hausmair, S. Chi, and C. Vogel, "How to reach 100% coding efficiency in multilevel burst-mode RF transmitters," in *Proc. ISCAS*, Beijing, 2013, pp. 2255–2258. [Online]. Available: https://doi.org/10.1109/ISCAS.2013.6572326
+
 [11] S. Chi, P. Singerl, and C. Vogel, "Coding efficiency optimization for multilevel PWM based switched-mode RF transmitters," in *Proc. MWSCAS*, Seoul, 2011, pp. 1–4. [Online]. Available: https://doi.org/10.1109/MWSCAS.2011.6026539
+
 [12] S. Chi, K. Hausmair, and C. Vogel, "Coding efficiency of bandlimited PWM based burst-mode RF transmitters," in *Proc. ISCAS*, Beijing, 2013, pp. 2263–2266. [Online]. Available: https://doi.org/10.1109/ISCAS.2013.6572328
+
 [13] S. Chi, C. Vogel, and P. Singerl, "The frequency spectrum of polar modulated PWM signals and the image problem," in *Proc. ICECS*, Athens, Greece, 2010, pp. 679–682. [Online]. Available: https://doi.org/10.1109/ICECS.2010.5724603
+
 [14] T. Hoefler, D. Alistarh, T. Ben-Nun, N. Dryden, and A. Peste, "Sparsity in Deep Learning: Pruning and growth for efficient inference and training in neural networks," arXiv preprint arXiv:2102.00554, 2021. [Online]. Available: http://arxiv.org/abs/2102.00554
+
 [15] J. Singh, O. Dabeer, and U. Madhow, "On the limits of communication with low-precision analog-to-digital conversion at the receiver," *IEEE Transactions on Communications*, vol. 57, no. 12, pp. 3629–3639, Dec. 2009.
+
 [16] J. Prainsack and K. Witrisal, "Optimum receiver based on single bit quantization," in *Proc. SPAWC*, Marrakech, Morocco, Jun. 2010, pp. 1–5. [Online]. Available: https://doi.org/10.1109/SPAWC.2010.5671062
+
 [17] H. A. Hjortland, *Sampled and Continuous-Time 1-Bit Signal Processing in CMOS for Wireless Sensor Networks* (PhD Thesis), [n.d.].
+
 [18] G. G. E. Gielen, L. Hernandez, and P. Rombouts, "Time-Encoding Analog-to-Digital Converters – Part 1: Basic Principles," *IEEE Solid-State Circuits Magazine*, vol. 12, no. 2, pp. 47–55, 2020. [Online]. Available: https://doi.org/10.1109/MSSC.2020.2987536
+
 [19] G. G. E. Gielen, L. Hernandez, and P. Rombouts, "Time-Encoding Analog-to-Digital Converters – Part 2: Architectures and Circuits," *IEEE Solid-State Circuits Magazine*, vol. 12, no. 3, pp. 18–27, 2020. [Online]. Available: https://doi.org/10.1109/MSSC.2020.3002144
 </div>
