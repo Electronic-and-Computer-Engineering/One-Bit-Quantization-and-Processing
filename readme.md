@@ -27,7 +27,7 @@ Click Modulation produces one-bit output through periodic switching pulses, enab
 
 ## Research Questions
 
-**o** How can the quantization function $\mathcal{F}(\cdot)$ be optimized such that for a given signal $\underline{x} \in \mathbb{R}^N$, the binary representation $\underline{b} \in \{-1, 1\}^N$ minimizes the squared reconstruction error?
+**o** How can the quantization function $\mathcal{F}(\cdot)$ be optimized such that for a given signal $\underline{x} \in \mathbb{R}^N$, the binary representation $\underline{b} \in {-1, 1}^N$ minimizes the squared reconstruction error?
 
 $$
 E(\underline{x}, \underline{b}) = \| \underline{x} - R \cdot \underline{b} \|_2^2
