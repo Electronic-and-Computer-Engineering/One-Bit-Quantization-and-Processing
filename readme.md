@@ -55,7 +55,9 @@ The robustness of one-bit quantization depends on its adaptability across varyin
 
 
 
+
 [2] P. T. Boufounos and R. G. Baraniuk, *1-Bit Compressive Sensing*, IEEE CISS, 2008.
+
 
 
 
@@ -63,7 +65,9 @@ The robustness of one-bit quantization depends on its adaptability across varyin
 
 
 
+
 [4] S. Khobahi and M. Soltanalian, *Model-Based Deep Learning for One-Bit Compressive Sensing*, IEEE Trans. Signal Processing, vol. 68, 2020.
+
 
 
 
@@ -71,7 +75,9 @@ The robustness of one-bit quantization depends on its adaptability across varyin
 
 
 
+
 [6] J. D. Reiss, *Understanding Sigma–Delta Modulation*, AES Journal, vol. 56, no. 1, 2008.
+
 
 
 
@@ -79,7 +85,9 @@ The robustness of one-bit quantization depends on its adaptability across varyin
 
 
 
+
 [8] K. Hausmair et al., *Aliasing-Free Digital Pulse-Width Modulation for Burst-Mode RF Transmitters*, IEEE TCAS-I, vol. 60, no. 2, 2013.
+
 
 
 
@@ -87,7 +95,9 @@ The robustness of one-bit quantization depends on its adaptability across varyin
 
 
 
+
 [10] K. Hausmair et al., *How to Reach 100% Coding Efficiency in Multilevel Burst-Mode RF Transmitters*, ISCAS, 2013.
+
 
 
 
@@ -95,7 +105,9 @@ The robustness of one-bit quantization depends on its adaptability across varyin
 
 
 
+
 [12] S. Chi et al., *Coding Efficiency of Bandlimited PWM-Based Burst-Mode RF Transmitters*, ISCAS, 2013.
+
 
 
 
@@ -103,7 +115,9 @@ The robustness of one-bit quantization depends on its adaptability across varyin
 
 
 
+
 [14] T. Hoefler et al., *Sparsity in Deep Learning: Pruning and Growth for Efficient Inference and Training*, arXiv:2102.00554, 2021.
+
 
 
 
@@ -111,7 +125,9 @@ The robustness of one-bit quantization depends on its adaptability across varyin
 
 
 
+
 [16] J. Prainsack and K. Witrisal, *Optimum Receiver Based on Single Bit Quantization*, SPAWC, 2010.
+
 
 
 
@@ -119,7 +135,9 @@ The robustness of one-bit quantization depends on its adaptability across varyin
 
 
 
+
 [18] G. G. E. Gielen et al., *Time-Encoding ADCs – Part 1: Basic Principles*, IEEE Solid-State Circuits Magazine, vol. 12, no. 2, 2020.
+
 
 
 
@@ -127,7 +145,9 @@ The robustness of one-bit quantization depends on its adaptability across varyin
 
 
 
+
 [20] N. C. Sevuktekin et al., *Signal Processing Foundations for Time-Based Signal Representations*, IEEE Signal Processing Magazine, vol. 36, no. 6, 2019.
+
 
 
 
@@ -135,7 +155,9 @@ The robustness of one-bit quantization depends on its adaptability across varyin
 
 
 
+
 [22] H. Enzinger and C. Vogel, *Analytical Description of Multilevel Carrier-Based PWM*, ISCAS, 2014.
+
 
 
 
@@ -143,7 +165,9 @@ The robustness of one-bit quantization depends on its adaptability across varyin
 
 
 
+
 [24] F. Chierchie and E. E. Paolini, *Digital Distortion-Free PWM and Click Modulation*, IEEE TCAS-II, vol. 65, no. 3, 2018.
+
 
 
 
