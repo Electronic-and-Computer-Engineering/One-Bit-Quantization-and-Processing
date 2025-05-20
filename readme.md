@@ -1,3 +1,5 @@
+<div style="text-align: justify">
+  
 # Robust Quantization and Processing of One-Bit Signals
 
 **Authors:**  
@@ -97,3 +99,5 @@ This research is funded by the Austrian Science Fund (FWF) [10.55776/DFH 5] with
 [3] F. Mayer and C. Vogel, “An Optimization-Based Approach to One-Bit Quantization,” *ISCAS 2024*.  
 [4] S. Khobahi et al., “Deep Signal Recovery with One-Bit Quantization,” *ICASSP*, IEEE, 2019.  
 [5] R. Schreier et al., *Understanding Delta-Sigma Data Converters*, Wiley, 2017.
+
+</div>
