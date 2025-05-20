@@ -9,7 +9,7 @@ In audio applications, one-bit techniques enable increased sampling rates and re
 The implications of low-precision quantization on communication capacity have also been studied extensively [15,16], while modern CMOS and time-encoding ADC developments facilitate real-world adoption [17–19].
 
 <figure>
-  <img src="i_img/DTOBP.png" alt="Figure 1: Block diagram of discrete-time one-bit processing" width="70%"/>
+  <img src="i_img/DTOBP.png" alt="Figure 1: Block diagram of discrete-time one-bit processing" width="95%"/>
 </figure>
 
 **Figure 1:** Block diagram of discrete-time one-bit processing 
@@ -20,7 +20,7 @@ Real-valued signals can be transformed into binary form via pulse-width, pulse-p
 Click Modulation produces one-bit output through periodic switching pulses, enabling bandpass reconstruction using low-pass filters [23,24]. However, it is prone to switching-time errors and high hardware requirements [25].
 
 <figure>
-  <img src="i_img/ReconLPF.png" width="70%"/>
+  <img src="i_img/ReconLPF.png" width="95%"/>
 </figure>
 
 **Figure 2:** Reconstruction from one-bit signal $\underline{b}$ using low-pass filter $R$
