@@ -5,6 +5,25 @@ Florian Mayer – FH JOANNEUM University of Applied Sciences, Graz, Austria
 Christian Vogel – FH JOANNEUM University of Applied Sciences, Graz, Austria
 
 ---
+## Introduction
+
+One-bit signals are binary, meaning that each single sample is *on* or *off* at any given time.  
+This characteristic makes it easier to encode, decode, and process signals with higher efficiency, as the two-level signal significantly reduces storage as well as complexity costs [1].
+
+As such, they have practical applications in many areas, including digital signal processing, compressive sensing, analog-to-digital conversion (ADC), and communication systems.
+
+In compressive sensing, one-bit quantization has significantly enhanced sparse signal recovery, efficiently managing dense signals and extensive data [2]. Further, using deep learning frameworks and model-based deep learning architectures enhances the ability to recover signals from quantized data by learning optimal reconstruction algorithms [3, 4].
+
+Especially in audio processing, one-bit signals allow for higher sampling rates, improving sound quality and efficiency by reducing the need for complex filtering and signal processing [5, 6, 7].
+
+Using one-bit signals in burst-mode RF transmitters allows power amplifiers to reach peak efficiency and avoid power waste during low-level periods, resulting in higher average efficiency compared to conventional linear power amplifiers [8–13].
+
+Applying one-bit quantization further enhances machine learning by enabling smaller and more efficient network structures suitable for edge computing and IoT devices with constrained computational resources [14].
+
+Research on the impact of low-precision ADCs on communication performance highlights the trade-off between precision and efficiency [15, 16].  
+One-bit signal processing is further empowered by advances in CMOS technology, especially for wireless sensor networks [17], and the development of time-encoding ADCs [18, 19].
+
+---
 
 One-bit signals represent an extreme form of quantization, where each sample is reduced to a binary value of either `+1` or `−1`. This binary nature offers attractive advantages in terms of hardware efficiency, signal transmission, and low power consumption. One-bit quantization has proven useful in areas such as digital signal processing, analog-to-digital conversion (ADC), compressive sensing, burst-mode RF systems, and energy-aware machine learning.
 
