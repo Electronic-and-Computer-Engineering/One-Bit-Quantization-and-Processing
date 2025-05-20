@@ -1,135 +1,92 @@
-<div style="text-align: justify">
-  
-# Robust Quantization and Processing of One-Bit Signals
+# Robust Quantization and Processing for One-Bit Signals
 
-**Authors:**  
-Florian Mayer – FH JOANNEUM University of Applied Sciences, Graz, Austria  
-Christian Vogel – FH JOANNEUM University of Applied Sciences, Graz, Austria
-
----
 ## Introduction
 
-One-bit signals are binary, meaning that each single sample is *on* or *off* at any given time (`+1` or `−1`).  
-This characteristic makes it easier to encode, decode, and process signals with higher efficiency, as the two-level signal significantly reduces storage as well as complexity costs [1]. As such, they have practical applications in many areas, including digital signal processing, compressive sensing, analog-to-digital conversion (ADC), and communication systems.
+One-bit signals are binary-valued sequences in which each sample is either 'on' or 'off', yielding significant gains in encoding simplicity, storage, and processing efficiency [1]. This binary nature has enabled practical applications across digital signal processing, analog-to-digital conversion, communication systems, and especially compressive sensing, where it facilitates sparse signal recovery from high-dimensional data [2]. Enhancements via deep learning, including model-based reconstruction architectures, further boost recovery fidelity [3,4].
 
-In compressive sensing, one-bit quantization has significantly enhanced sparse signal recovery, efficiently managing dense signals and extensive data [2]. Further, using deep learning frameworks and model-based deep learning architectures enhances the ability to recover signals from quantized data by learning optimal reconstruction algorithms [3,4]. Especially in audio processing, one-bit signals allow for higher sampling rates, improving sound quality and efficiency by reducing the need for complex filtering and signal processing [5,6,7].
+In audio applications, one-bit techniques enable increased sampling rates and reduce system complexity [5–7]. In RF systems, particularly burst-mode transmitters, one-bit quantization maximizes amplifier efficiency by eliminating power waste during inactive periods [8–13]. In resource-constrained applications such as IoT or edge computing, one-bit networks promote energy-efficient model architectures [14].
 
-Using one-bit signals in burst-mode RF transmitters allows power amplifiers to reach peak efficiency and avoid power waste during low-level periods, resulting in higher average efficiency compared to conventional linear power amplifiers [8–13].
-Applying one-bit quantization further enhances machine learning by enabling smaller and more efficient network structures suitable for edge computing and IoT devices with constrained computational resources [14]. Research on the impact of low-precision ADCs on communication performance highlights the trade-off between precision and efficiency [15,16]. One-bit signal processing is further empowered by advances in CMOS technology, especially for wireless sensor networks [17], and the development of time-encoding ADCs [18,19].
+The implications of low-precision quantization on communication capacity have also been studied extensively [15,16], while modern CMOS and time-encoding ADC developments facilitate real-world adoption [17–19].
 
----
+<figure>
+  <img src="i_img/DTOBP.png" alt="Figure 1: Block diagram of discrete-time one-bit processing" width="70%"/>
+</figure>
 
-One-bit signals represent an extreme form of quantization, where each sample is reduced to a binary value of either `+1` or `−1`. This binary nature offers attractive advantages in terms of hardware efficiency, signal transmission, and low power consumption. One-bit quantization has proven useful in areas such as digital signal processing, analog-to-digital conversion (ADC), compressive sensing, burst-mode RF systems, and energy-aware machine learning.
+**Figure 1:** Block diagram of discrete-time one-bit processing 
 
-However, these benefits come at the cost of severe information loss. In contrast to traditional multi-bit representations, one-bit signals require fundamentally new algorithms for signal recovery and processing, especially under realistic noise, dynamic range, and bandwidth constraints.
+## One-Bit Quantization
+Real-valued signals can be transformed into binary form via pulse-width, pulse-position, or density modulation. However, these approaches often suffer from noise sensitivity and limited dynamic range [20]. Sigma-Delta Quantization (SDQ) employs oversampling and noise shaping to achieve high resolution [6,21], yet its high switching activity compromises power efficiency. PWM-based systems provide improved efficiency but exhibit spectral distortion unless aliasing is mitigated [8,22]. Alias-free variants of PWM exist [9], but add significant implementation complexity.
 
-This research investigates whether there exists an **optimal one-bit representation** of a given real-valued signal that minimizes reconstruction error under filtering constraints. Instead of heuristic or fixed quantizers, the quantization is formulated as a constrained optimization problem:
+Click Modulation produces one-bit output through periodic switching pulses, enabling bandpass reconstruction using low-pass filters [23,24]. However, it is prone to switching-time errors and high hardware requirements [25].
+
+<figure>
+  <img src="i_img/ReconLPF.png" width="70%"/>
+</figure>
+
+**Figure 2:** Reconstruction from one-bit signal $\underline{b}$ using low-pass filter $R$
+
+## Research Questions
+
+**o** How can the quantization function $\mathcal{F}(\cdot)$ be optimized such that for a given signal $\underline{x} \in \mathbb{R}^N$, the binary representation $\underline{b} \in \{-1, 1\}^N$ minimizes the squared reconstruction error?
 
 $$
-\min_{\mathbf{b} \in \{-1, +1\}^N} \left\| \mathbf{x} - \mathbf{R} \cdot \mathbf{b} \right\|_2^2
+E(\underline{x}, \underline{b}) = \| \underline{x} - R \cdot \underline{b} \|_2^2
 $$
 
-Here, \( \mathbf{x} \in \mathbb{R}^N \) is the original signal, \( \mathbf{b} \) the one-bit vector, and \( \mathbf{R} \in \mathbb{R}^{N \times N} \) a fixed reconstruction filter (e.g., FIR). The task is to find a binary sequence \( \mathbf{b} \) that best preserves the signal structure after reconstruction.
+**o** Can frequency shaping be enforced during quantization to match a target energy spectrum $\tilde{E}(\omega)$ without requiring high oversampling?
 
----
+$$
+\min_{\underline{b} \in \mathbb{B}^N} \| \underline{x} - R \cdot \underline{b} \|_2^2 \quad \text{subject to} \quad \| B(\omega) \|^2 = \tilde{E}(\omega)
+$$
 
-## Research Objectives
+where $B(\omega) = \text{DTFT}\{\underline{b}\}$.
 
-This project addresses the following core questions:
+**o** Can the one-bit quantizer structure be redesigned for reduced computational complexity $\mathcal{O}$, leveraging sequential or parallel processing?
 
-- **Optimal Representation:** How can the one-bit quantizer \( F(\cdot) \) be improved to yield minimal reconstruction error for a given real-valued input signal?
+**o** How can such systems remain robust in real-world environments, accounting for noise and other uncertainties?
 
-- **Spectral Shaping:** Is it possible to design one-bit quantizers that enforce a specific spectral energy distribution \( \tilde{E}(\omega) \), without relying on oversampling?
+## Conclusion
+The robustness of one-bit quantization depends on its adaptability across varying signal types and environmental conditions. Optimality criteria can differ based on the target application, hence quantization frameworks must accommodate diverse and dynamic requirements while maintaining low complexity and high fidelity.
 
-- **Sequential and Block-Based Methods:** Can the quantization process be split into sequential or block-wise segments to reduce the computational complexity, while preserving fidelity?
-
-- **Robustness:** How can one-bit quantization be made resilient to noise and uncertainty, especially in real-world and embedded applications?
-
-- **Arithmetic Operations:** Can arithmetic (e.g., \( F(x_1) + F(x_2) \approx F(x_1 + x_2) \)) be performed directly on quantized signals, and under what conditions does this hold?
-
----
-
-## Methodology
-
-We propose a structured, optimization-based framework that generalizes the quantization process across application domains. The quantization is performed block-wise to reduce complexity, using overlapping filters and minimum-phase systems for optimal spectral behavior. The block-structure allows the reuse of previous results and enables streaming applications.
-
-The core components include:
-
-- **Filter Design:** Minimum-phase FIR filters for targeted noise shaping.
-- **Block Optimization:** Independent optimization per block with propagated error history.
-- **Evaluation Metrics:** Signal-to-error ratio (SER), spectral flatness, and robustness to variation.
-
-This block-wise method is referred to as **OBBQ – Optimization-Based Block Quantization**, and generalizes previous work on one-bit quantization into a scalable and adaptive form.
-
----
-
-## Outlook
-
-By transforming one-bit quantization from a static encoding into a dynamic optimization problem, this framework offers flexibility for a wide range of signal types and use-cases. Potential applications include:
-
-- Real-time digital signal processing on embedded systems
-- Robust low-resolution ADCs for RF frontends
-- Frequency-selective signal shaping without oversampling
-- Adaptive one-bit learning in energy-constrained neural systems
-
-Future work will explore higher-dimensional signals, real-time implementations, and combinations with deep-learning-based reconstruction methods.
-
----
-
-## Further Project Modules
-
-- [ISCAS_2024](./ISCAS_2024/README.md)
-- [Proposal_Documentation](./Proposal_Documentation/README.md)
-- [Sequential_Prototype](./Sequential_Prototype/README.md)
-
----
-
-## Acknowledgment
-
-This research is funded by the Austrian Science Fund (FWF) [10.55776/DFH 5] within the DENISE project and supported by the province of Styria.
-
----
-
-## © 2025, Florian Mayer and Christian Vogel
-
----
 ## References
+<sub>
 
-[1] Z. Li, W. Xu, X. Zhang, and J. Lin, "A survey on one-bit compressed sensing: theory and applications," *Frontiers of Computer Science*, vol. 12, no. 2, pp. 217–230, 2018. [Online]. Available: https://doi.org/10.1007/s11704-017-6132-7
+[1] Z. Li et al., *A survey on one-bit compressed sensing: theory and applications*, Frontiers of Computer Science, vol. 12, no. 2, 2018.
+[2] P. T. Boufounos and R. G. Baraniuk, *1-Bit Compressive Sensing*, IEEE CISS, 2008.
+[3] S. Khobahi et al., *Deep Signal Recovery with One-Bit Quantization*, ICASSP, 2019.
+[4] S. Khobahi and M. Soltanalian, *Model-Based Deep Learning for One-Bit Compressive Sensing*, IEEE Trans. Signal Processing, vol. 68, 2020.
+[5] D. Reefman and E. Janssen, *One-Bit Audio: An Overview*, Journal of the AES, vol. 52, 2004.
+[6] J. D. Reiss, *Understanding Sigma–Delta Modulation*, AES Journal, vol. 56, no. 1, 2008.
+[7] S. M. Kershaw and M. B. Sandler, *Sigma-Delta Modulation for Audio DSP*, IEE Colloquium, 1993.
+[8] K. Hausmair et al., *Aliasing-Free Digital Pulse-Width Modulation for Burst-Mode RF Transmitters*, IEEE TCAS-I, vol. 60, no. 2, 2013.
+[9] K. Hausmair et al., *Multiplierless Implementation of an Aliasing-Free Digital Pulsewidth Modulator*, IEEE TCAS-II, vol. 60, no. 9, 2013.
+[10] K. Hausmair et al., *How to Reach 100% Coding Efficiency in Multilevel Burst-Mode RF Transmitters*, ISCAS, 2013.
+[11] S. Chi et al., *Coding Efficiency Optimization for Multilevel PWM-based RF Transmitters*, MWSCAS, 2011.
+[12] S. Chi et al., *Coding Efficiency of Bandlimited PWM-Based Burst-Mode RF Transmitters*, ISCAS, 2013.
+[13] S. Chi et al., *The Frequency Spectrum of Polar Modulated PWM Signals and the Image Problem*, ICECS, 2010.
+[14] T. Hoefler et al., *Sparsity in Deep Learning: Pruning and Growth for Efficient Inference and Training*, arXiv:2102.00554, 2021.
+[15] J. Singh et al., *On the Limits of Communication with Low-Precision ADC at the Receiver*, IEEE Trans. Communications, vol. 57, no. 12, 2009.
+[16] J. Prainsack and K. Witrisal, *Optimum Receiver Based on Single Bit Quantization*, SPAWC, 2010.
+[17] H. Hjortland, *Sampled and Continuous-Time 1-Bit Signal Processing in CMOS for Wireless Sensor Networks*, PhD Thesis, n.d.
+[18] G. G. E. Gielen et al., *Time-Encoding ADCs – Part 1: Basic Principles*, IEEE Solid-State Circuits Magazine, vol. 12, no. 2, 2020.
+[19] G. G. E. Gielen et al., *Time-Encoding ADCs – Part 2: Architectures and Circuits*, IEEE Solid-State Circuits Magazine, vol. 12, no. 3, 2020.
+[20] N. C. Sevuktekin et al., *Signal Processing Foundations for Time-Based Signal Representations*, IEEE Signal Processing Magazine, vol. 36, no. 6, 2019.
+[21] R. Schreier et al., *Understanding Delta-Sigma Data Converters*, Wiley, 2017.
+[22] H. Enzinger and C. Vogel, *Analytical Description of Multilevel Carrier-Based PWM*, ISCAS, 2014.
+[23] B. F. Logan, *Click Modulation*, AT&T Bell Laboratories Technical Journal, vol. 63, no. 3, 1984.
+[24] F. Chierchie and E. E. Paolini, *Digital Distortion-Free PWM and Click Modulation*, IEEE TCAS-II, vol. 65, no. 3, 2018.
+[25] L. Stefanazzi et al., *Click Modulation: An Off-Line Implementation*, MWSCAS, 2008.
+</sub>
 
-[2] P. T. Boufounos and R. G. Baraniuk, "1-Bit compressive sensing," in *Proc. 42nd Annual Conf. Information Sciences and Systems (CISS)*, Princeton, NJ, USA, Mar. 2008, pp. 16–21. [Online]. Available: https://doi.org/10.1109/CISS.2008.4558487
+------------------------
+## Acknowledgement
+</sub>
+This work was funded by the Austrian Science Fund (FWF) [10.55776/ DFH 5] and the province of Styria.
 
-[3] S. Khobahi, N. Naimipour, M. Soltanalian, and Y. C. Eldar, "Deep Signal Recovery with One-Bit Quantization," in *Proc. ICASSP*, May 2019, pp. 2987–2991.
+## License
 
-[4] S. Khobahi and M. Soltanalian, "Model-Based Deep Learning for One-Bit Compressive Sensing," *IEEE Transactions on Signal Processing*, vol. 68, pp. 5292–5307, 2020.
+This work is licensed under the [Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/).
+You are free to use, adapt, and share it **for non-commercial purposes**, provided that you **credit the original author**.
 
-[5] D. Reefman and E. Janssen, "One-bit Audio: An Overview," *Journal of the Audio Engineering Society*, vol. 52, Mar. 2004.
+© [Florian Mayer], [2025]
 
-[6] J. D. Reiss, "Understanding Sigma-Delta Modulation: The Solved and Unsolved Issues," *AES: Journal of the Audio Engineering Society*, vol. 56, no. 1, 2008.
-
-[7] S. M. Kershaw and M. B. Sandler, "Sigma-delta modulation for audio DSP," in *IEE Colloquium on Audio DSP – Circuits and Systems*, 1993, pp. 1/1–1/6.
-
-[8] K. Hausmair, S. Chi, P. Singerl, and C. Vogel, "Aliasing-Free Digital Pulse-Width Modulation for Burst-Mode RF Transmitters," *IEEE Transactions on Circuits and Systems I*, vol. 60, no. 2, pp. 415–427, Feb. 2013. [Online]. Available: https://doi.org/10.1109/TCSI.2012.2215776
-
-[9] K. Hausmair, P. Singerl, and C. Vogel, "Multiplierless Implementation of an Aliasing-Free Digital Pulsewidth Modulator," *IEEE Transactions on Circuits and Systems II*, vol. 60, no. 9, pp. 592–596, Sep. 2013. [Online]. Available: https://doi.org/10.1109/TCSII.2013.2268431
-
-[10] K. Hausmair, S. Chi, and C. Vogel, "How to reach 100% coding efficiency in multilevel burst-mode RF transmitters," in *Proc. ISCAS*, Beijing, 2013, pp. 2255–2258. [Online]. Available: https://doi.org/10.1109/ISCAS.2013.6572326
-
-[11] S. Chi, P. Singerl, and C. Vogel, "Coding efficiency optimization for multilevel PWM based switched-mode RF transmitters," in *Proc. MWSCAS*, Seoul, 2011, pp. 1–4. [Online]. Available: https://doi.org/10.1109/MWSCAS.2011.6026539
-
-[12] S. Chi, K. Hausmair, and C. Vogel, "Coding efficiency of bandlimited PWM based burst-mode RF transmitters," in *Proc. ISCAS*, Beijing, 2013, pp. 2263–2266. [Online]. Available: https://doi.org/10.1109/ISCAS.2013.6572328
-
-[13] S. Chi, C. Vogel, and P. Singerl, "The frequency spectrum of polar modulated PWM signals and the image problem," in *Proc. ICECS*, Athens, Greece, 2010, pp. 679–682. [Online]. Available: https://doi.org/10.1109/ICECS.2010.5724603
-
-[14] T. Hoefler, D. Alistarh, T. Ben-Nun, N. Dryden, and A. Peste, "Sparsity in Deep Learning: Pruning and growth for efficient inference and training in neural networks," arXiv preprint arXiv:2102.00554, 2021. [Online]. Available: http://arxiv.org/abs/2102.00554
-
-[15] J. Singh, O. Dabeer, and U. Madhow, "On the limits of communication with low-precision analog-to-digital conversion at the receiver," *IEEE Transactions on Communications*, vol. 57, no. 12, pp. 3629–3639, Dec. 2009.
-
-[16] J. Prainsack and K. Witrisal, "Optimum receiver based on single bit quantization," in *Proc. SPAWC*, Marrakech, Morocco, Jun. 2010, pp. 1–5. [Online]. Available: https://doi.org/10.1109/SPAWC.2010.5671062
-
-[17] H. A. Hjortland, *Sampled and Continuous-Time 1-Bit Signal Processing in CMOS for Wireless Sensor Networks* (PhD Thesis), [n.d.].
-
-[18] G. G. E. Gielen, L. Hernandez, and P. Rombouts, "Time-Encoding Analog-to-Digital Converters – Part 1: Basic Principles," *IEEE Solid-State Circuits Magazine*, vol. 12, no. 2, pp. 47–55, 2020. [Online]. Available: https://doi.org/10.1109/MSSC.2020.2987536
-
-[19] G. G. E. Gielen, L. Hernandez, and P. Rombouts, "Time-Encoding Analog-to-Digital Converters – Part 2: Architectures and Circuits," *IEEE Solid-State Circuits Magazine*, vol. 12, no. 3, pp. 18–27, 2020. [Online]. Available: https://doi.org/10.1109/MSSC.2020.3002144
-</div>

@@ -29,8 +29,8 @@ sNbins    = 2048
 sBlockSize = 256 #32
 sM         = 64#16
 sL         = sBlockSize - sM
-sHop       = 4
-sK         = 4096
+sHop       = 16
+sK         = 6144
 
 sBSize = 16
 
@@ -40,7 +40,7 @@ sNewSignal = False ###################  #######
 ### Signal generation ###
 if sNewSignal:
     sFs = 1024
-    sSigFmax = 67
+    sSigFmax = 50
     vxFrequ = (np.arange(0, sSigFmax, step=2)).reshape(-1, 1)
     vxPhase = np.random.rand(len(vxFrequ), 1) * 2 * np.pi
 
