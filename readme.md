@@ -1,5 +1,17 @@
 # Robust Quantization and Processing for One-Bit Signals
 
+> This work was funded by the Austrian Science Fund (FWF) [10.55776/ DFH 5] and the province of Styria.
+
+## Derivative Works
+
+<details>
+<summary> Expand </summary>
+
+- [An Optimization-Based Approach to One-Bit Quantization](41_ISCAS2024/README.md)
+- [Block-Based Optimization for Frequency-Selective One-Bit Quantization](42_ISCAS2025/README.md)
+
+</details>
+
 ## Introduction
 
 One-bit signals are binary-valued sequences in which each sample is either 'on' or 'off', yielding significant gains in encoding simplicity, storage, and processing efficiency [1]. This binary nature has enabled practical applications across digital signal processing, analog-to-digital conversion, communication systems, and especially compressive sensing, where it facilitates sparse signal recovery from high-dimensional data [2]. Enhancements via deep learning, including model-based reconstruction architectures, further boost recovery fidelity [3,4].
@@ -27,7 +39,7 @@ Click Modulation produces one-bit output through periodic switching pulses, enab
 
 ## Research Questions
 
-**o** How can the quantization function $\mathcal{F}(\cdot)$ be optimized such that for a given signal $\underline{x} \in \mathbb{R}^N$, the binary representation $\underline{b} \in {-1, 1}^N$ minimizes the squared reconstruction error?
+**o** How can the quantization function $\mathcal{F}(\cdot)$ be optimized such that for a given signal $\underline{x} \in \mathbb{R}^N$, the binary representation $\underline{b} \in$ {$-1$, $1$}$^N$ minimizes the squared reconstruction error?
 
 $$
 E(\underline{x}, \underline{b}) = \| \underline{x} - R \cdot \underline{b} \|_2^2
@@ -49,6 +61,9 @@ where $B(\omega) = \text{DTFT}\{\underline{b}\}$.
 The robustness of one-bit quantization depends on its adaptability across varying signal types and environmental conditions. Optimality criteria can differ based on the target application, hence quantization frameworks must accommodate diverse and dynamic requirements while maintaining low complexity and high fidelity.
 
 ## References
+<details>
+<summary>Expand</summary>
+
 [1] Z. Li et al., *A survey on one-bit compressed sensing: theory and applications*, Frontiers of Computer Science, vol. 12, no. 2, 2018.
 
 [2] P. T. Boufounos and R. G. Baraniuk, *1-Bit Compressive Sensing*, IEEE CISS, 2008.
@@ -99,7 +114,8 @@ The robustness of one-bit quantization depends on its adaptability across varyin
 
 [25] L. Stefanazzi et al., *Click Modulation: An Off-Line Implementation*, MWSCAS, 2008.
 
-------------------------
+</details>
+
 ## Acknowledgement
 This work was funded by the Austrian Science Fund (FWF) [10.55776/ DFH 5] and the province of Styria.
 
