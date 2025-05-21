@@ -39,21 +39,21 @@ Click Modulation produces one-bit output through periodic switching pulses, enab
 
 ## Research Questions
 
-**o** How can the quantization function $\mathcal{F}(\cdot)$ be optimized such that for a given signal $\underline{x} \in \mathbb{R}^N$, the binary representation $\underline{b} \in$ {$-1$, $1$}$^N$ minimizes the squared reconstruction error?
+**o** How can the quantization function $`\mathcal{F}(\cdot)`$ be optimized such that for a given signal $`\underline{x} \in \mathbb{R}^N`$, the binary representation $`\underline{b} \in`$ { $`-1`$, $`1`$} $`^N`$ minimizes the squared reconstruction error?
 
-$$
+```math
 E(\underline{x}, \underline{b}) = \| \underline{x} - R \cdot \underline{b} \|_2^2
-$$
+```
 
 **o** Can frequency shaping be enforced during quantization to match a target energy spectrum $\tilde{E}(\omega)$ without requiring high oversampling?
 
-$$
+```math
 \min_{\underline{b} \in \mathbb{B}^N} \| \underline{x} - R \cdot \underline{b} \|_2^2 \quad \text{subject to} \quad \| B(\omega) \|^2 = \tilde{E}(\omega)
-$$
+```
 
-where $B(\omega) = \text{DTFT}\{\underline{b}\}$.
+where $`B(\omega) = \text{DTFT}\{\underline{b}\}`$.
 
-**o** Can the one-bit quantizer structure be redesigned for reduced computational complexity $\mathcal{O}$, leveraging sequential or parallel processing?
+**o** Can the one-bit quantizer structure be redesigned for reduced computational complexity $`\mathcal{O}`$, leveraging sequential or parallel processing?
 
 **o** How can such systems remain robust in real-world environments, accounting for noise and other uncertainties?
 

@@ -64,54 +64,54 @@ To address this, we introduce a block-based optimization framework (OBBQ) that c
   <img src="i_img/GlobalReconIdea.png" width="95%"/>
 </figure>
 
-**Figure 1:** The input signal $\underline{x}$ is quantized to $\underline{b}$ by $\mathcal{F}(\cdot)$, then reconstructed to $\underline{x}_r$ by employing $R$.
+**Figure 1:** The input signal $`\underline{x}`$ is quantized to $`\underline{b}`$ by $`\mathcal{F}(\cdot)`$, then reconstructed to $`\underline{x}_r`$ by employing $`R`$.
 
-Let $\mathcal{F}(\cdot)$ be a function that maps a real-valued discrete-time signal $\underline{x} = [x_0, x_1, \ldots, x_n, \ldots, x_{N-1}]^T \in \mathbb{X}^N=[-\alpha,\alpha]^N$ with $\alpha \in \mathbb{R}^{+}_0$ and a signal length $N$, into a discrete-time one-bit signal $\underline{b} = [b_0, b_1, \ldots, b_n, \ldots, b_{N-1}]^T \in \mathbb{B}^N  = $ {$-1$, $ 1$ }$^N$, introduced in [15] and defined as
-$$
+Let $\mathcal{F}(\cdot)$ be a function that maps a real-valued discrete-time signal $`\underline{x} = [x_0, x_1, \ldots, x_n, \ldots, x_{N-1}]^T \in \mathbb{X}^N=[-\alpha,\alpha]^N`$ with $`\alpha \in \mathbb{R}^{+}_0`$ and a signal length $N$, into a discrete-time one-bit signal $`\underline{b} = [b_0, b_1, \ldots, b_n, \ldots, b_{N-1}]^T \in \mathbb{B}^N  = `$ {$`-1`$, $` 1`$ }$`^N`$, introduced in [15] and defined as
+```math
 \underline{b} = \mathcal{F}(\underline{x}).\tag{1}
-$$
+```
 
-We assume that the signal $\underline{x}$ is band-limited, with significant energy within a defined frequency domain $\omega_D$, and negligible energy outside, such that
-$$
+We assume that the signal $`\underline{x}`$ is band-limited, with significant energy within a defined frequency domain $`\omega_D`$, and negligible energy outside, such that
+```math
 X(\omega) = \textit{DTFT}\{\underline{x}\} \cong 0 \quad \text{for} \quad \omega \notin \omega_D.\tag{2}
-$$
+```
 
 As shown in Figure 1, the reconstructed signal $\underline{x}_r$ is given by
-$$
+```math
 \underline{x}_r = R \cdot \underline{b},\tag{3}
-$$
-where $R$ is the reconstruction filter matrix.
+```
+where $`R`$ is the reconstruction filter matrix.
 
-To evaluate the performance of the one-bit quantizer $\mathcal{F}(\cdot)$, we need to define the reconstruction error.  
+To evaluate the performance of the one-bit quantizer $`\mathcal{F}(\cdot)`$, we need to define the reconstruction error.  
 Since in practice $R$ is a non-ideal filter
-$$
+```math
 \underline{x}_f = R\cdot \underline{x} \neq \underline{x},\tag{4} 
-$$
+```
 we introduce an filter-independent reconstruction error 
-$$
+```math
 \underline{e} = \underline{x}_f - \underline{x}_r = R \cdot \underline{x} - R \cdot \underline{b} = R \cdot \underline{d}, \tag{5}
-$$
-where the difference between $\underline{x}$ and $\underline{b}$ is denoted as 
-$$
+```
+where the difference between $`\underline{x}`$ and $`\underline{b}`$ is denoted as 
+```math
 \underline{d} = \underline{x} - \underline{b}. \tag{6}
-$$
+```
 
-To determine the error between the signal $\underline{x}$ and $\underline{b}$, we introduce a measure ${E}(\underline{x},\underline{b})$.  
-For many practical problems, it is common to minimize the energy of the error signal employing the squared $l^2$-norm, given by
-$$
+To determine the error between the signal $`\underline{x}`$ and $`\underline{b}`$, we introduce a measure $`{E}(\underline{x},\underline{b})`$.  
+For many practical problems, it is common to minimize the energy of the error signal employing the squared $`l^2`$-norm, given by
+```math
 E(\underline{x},\underline{b}) = \|\underline{e}\|_2^2 = \sum_{n=0}^{N-1} |e_n|^2 = \|R \cdot \underline{d}\|_2^2, \tag{7}
-$$
+```
 where the optimal mapping function (1) would minimize the error function defined in (7). However, practical implementations of the mapping function {will most likely} lead to measures that are larger than the theoretical minimum, i.e., 
-$$
+```math
 {E}(\underline{x},\mathcal{F}(\underline{x})) \geq \underset{\underline{{b}}^{\ast} \in \mathbb{B}^N}{\text{min}}~{E}(\underline{x},\underline{{b}}^{\ast}), \tag{8}
-$$
-where ${\underline{{b}}^{\ast} \in \mathbb{B}^N}$ is the optimal solution and (1) is the best solution of the function $\mathcal{F}(\underline{x})$.
+```
+where $`{\underline{{b}}^{\ast} \in \mathbb{B}^N}`$ is the optimal solution and (1) is the best solution of the function $`\mathcal{F}(\underline{x})`$.
 
 ## III. Optimization for One-Bit Quantization
 
-In practice, determining the optimal one-bit representation $\underline{b}$ for a given signal $\underline{x}$ through the nonlinear function $\mathcal{F}(\cdot)$, which maps an infinite set of real values to a finite set of binary values $(\mathbb{R} \rightarrow \mathbb{B})$, is classified as an NP-hard problem [16]. Minimizing $E(\underline{x},\underline{\hat{b}})$ for a signal of length $N$ involves evaluating $2^N$ binary combinations, leading to exponential growth in the search space and significant computational challenges.
+In practice, determining the optimal one-bit representation $`\underline{b}`$ for a given signal $`\underline{x}`$ through the nonlinear function $`\mathcal{F}(\cdot)`$, which maps an infinite set of real values to a finite set of binary values $`(\mathbb{R} \rightarrow \mathbb{B})`$, is classified as an NP-hard problem [16]. Minimizing $`E(\underline{x},\underline{\hat{b}})`$ for a signal of length $`N`$ involves evaluating $`2^N`$ binary combinations, leading to exponential growth in the search space and significant computational challenges.
 
-As shown in Figure 2, we can use an optimization to find the best or at least good solutions for $\mathcal{F}(\cdot)$, where we may or may not use the reconstruction matrix $R$ for the filter matrix $W$. Fast algorithms from discrete optimization, such as those provided by the Gurobi optimizer [17] and CVX [18], are effective for small signal lengths $N$, but their computational demands increase significantly as the signal length grows.
+As shown in Figure 2, we can use an optimization to find the best or at least good solutions for $`\mathcal{F}(\cdot)`$, where we may or may not use the reconstruction matrix $`R`$ for the filter matrix $`W`$. Fast algorithms from discrete optimization, such as those provided by the Gurobi optimizer [17] and CVX [18], are effective for small signal lengths $N$, but their computational demands increase significantly as the signal length grows.
 
 Heuristic optimization methods, like genetic algorithms [19] and simulated annealing [20], can find good local optima. However, these methods still require significant computational resources and often converge to local minima, resulting in suboptimal quantized signals. By adopting simpler sequential optimization techniques [15], we can significantly reduce the computational complexity of the optimization problem for $\mathcal{F}(\cdot)$. Although this approach speeds up the process, it intentionally sacrifices global optimality in favor of a local measure.
 
@@ -124,40 +124,40 @@ Heuristic optimization methods, like genetic algorithms [19] and simulated annea
 **Figure 2:** General structure of the quantization process $\mathcal{F}(\cdot)$, generating a one-bit signal from a real-valued discrete-time signal.
 
 To make an optimization approach feasible and practically applicable, we consider a block-based optimization, where only small finite number of bits $M$, are optimized at once, and the errors are further propagated from one optimization block to the next.  
-For signals of finite length $N$, we consider therefore a finite linear time-invariant impulse response (FIR) filter $\underline{w} = [w_0, w_1, \cdots, w_n, \cdots, w_{L-1}] \in \mathbb{R}^L$ with filter length $L$, and partition the filter matrix $W$ of size $N \times N$ into smaller submatrices $\hat{W}^{(k)}$ of size $M \times M$ blocks.
+For signals of finite length $N$, we consider therefore a finite linear time-invariant impulse response (FIR) filter $`\underline{w} = [w_0, w_1, \cdots, w_n, \cdots, w_{L-1}] \in \mathbb{R}^L`$ with filter length $`L`$, and partition the filter matrix $`W`$ of size $`N \times N`$ into smaller submatrices $`\hat{W}^{(k)}`$ of size $`M \times M`$ blocks.
 
 ### A. Block Realization of the Signals and Matrices
 
-We divide the input signal $\underline{x}$ and the one-bit signal $\underline{\hat{b}}$ into $P$ blocks, each of length $M$, such that $P = \lceil \frac{N}{M} \rceil$ as in [21, 22]. Therefore, the signals are represented as $\underline{x} = [(\underline{x}^{(0)})^{T}, \cdots, (\underline{x}^{(P-1)})^T]^T$ with $(\underline{x}^{(p)})^{T} \in \mathbb{R}^M$ and $\underline{b} = [(\underline{b}^{(0)})^T, \cdots, (\underline{b}^{(P-1)})^T]^T$ with $(\underline{b}^{(p)})^T \in \mathbb{B}^M$, for $p = 0, 1, \ldots, P-1$.
+We divide the input signal $`\underline{x}`$ and the one-bit signal $`\underline{\hat{b}}`$ into $`P`$ blocks, each of length $`M`$, such that $`P = \lceil \frac{N}{M} \rceil`$ as in [21, 22]. Therefore, the signals are represented as $`\underline{x} = [(\underline{x}^{(0)})^{T}, \cdots, (\underline{x}^{(P-1)})^T]^T`$ with $`(\underline{x}^{(p)})^{T} \in \mathbb{R}^M`$ and $`\underline{b} = [(\underline{b}^{(0)})^T, \cdots, (\underline{b}^{(P-1)})^T]^T`$ with $`(\underline{b}^{(p)})^T \in \mathbb{B}^M`$, for $`p = 0, 1, \ldots, P-1`$.
 
-The filter matrix $W$ is expressed as a block matrix containing $M \times M$ submatrices, such that
+The filter matrix $`W`$ is expressed as a block matrix containing $`M \times M`$ submatrices, such that
 
-$$
+```math
 W = \begin{bmatrix}
     \hat{W}^{(0)} & O & \cdots & O \\
     \hat{W}^{(1)} & \hat{W}^{(0)} & \ddots & \vdots \\
     \vdots & \vdots & \ddots & O \\
     \hat{W}^{(P-1)} & \hat{W}^{(P-2)} & \cdots & \hat{W}^{(0)}
 \end{bmatrix},\tag{9}
-$$
+```
 
-where $O$ is the $M \times M$ zero matrix. Each block matrix $\hat{W}^{(k)}$ represents the filter’s contribution from the previous block step $k$, and is constructed from the filter coefficients $w_n$.
+where $`O`$ is the $`M \times M`$ zero matrix. Each block matrix $`\hat{W}^{(k)}`$ represents the filter’s contribution from the previous block step $`k`$, and is constructed from the filter coefficients $`w_n`$.
 
-The entries of $\hat{W}^{(k)}$ are defined as
+The entries of $`\hat{W}^{(k)}`$ are defined as
 
-$$
+```math
 \hat{W}^{(k)}_{ij} = 
 \begin{cases} 
     w_{kM + i - j}, & \text{if } 0 \leq kM + i - j < L \\
     0, & \text{otherwise},
 \end{cases}\tag{10}
-$$
+```
 
-where $\hat{W}^{(k)}_{ij}$ is the element at the $i$-th row and $j$-th column of block matrix $\hat{W}^{(k)}$.
+where $`\hat{W}^{(k)}_{ij}`$ is the element at the $`i`$-th row and $`j`$-th column of block matrix $`\hat{W}^{(k)}`$.
 
-For example, with $M = 4$ and $L = 9$, the resulting block matrices $\hat{W}^{(0)}, \hat{W}^{(1)}, \hat{W}^{(2)}$, and the zero matrix $O$ are structured as follows:
+For example, with $`M = 4`$ and $`L = 9`$, the resulting block matrices $`\hat{W}^{(0)}, \hat{W}^{(1)}, \hat{W}^{(2)}`$, and the zero matrix $`O`$ are structured as follows:
 
-$$
+```math
 \hat{W}^{(0)} = 
 \begin{bmatrix}
     w_0 & 0   & 0   & 0 \\
@@ -173,9 +173,9 @@ $$
     w_6 & w_5 & w_4 & w_3 \\
     w_7 & w_6 & w_5 & w_4
 \end{bmatrix}, \tag{11}
-$$
+```
 
-$$
+```math
 \hat{W}^{(2)} = 
 \begin{bmatrix}
     w_8 & w_7 & w_6 & w_5 \\
@@ -190,63 +190,63 @@ O =
     0 & 0 & 0 & 0 \\
     0 & 0 & 0 & 0
 \end{bmatrix}.\tag{12}
-$$
+```
 
-The lower-triangular structure of $W$ reflects the causality of the filter, ensuring that each block depends only on the current and previous blocks.
+The lower-triangular structure of $`W`$ reflects the causality of the filter, ensuring that each block depends only on the current and previous blocks.
 
 <figure>
   <img src="i_img/blockSequIdea.png" width="95%"/>
 </figure>
 
-**Figure 3:** The representation of $\mathcal{F}(\cdot)$ block-wise optimization process that minimizes the error ${E}(\underline{x}^{(p)},\underline{\hat b}^{(p)})$ for every $p$-th $M$ sized block of the signal length $N$.
+**Figure 3:** The representation of $`\mathcal{F}(\cdot)`$ block-wise optimization process that minimizes the error $`{E}(\underline{x}^{(p)},\underline{\hat b}^{(p)})`$ for every $`p`$-th $`M`$ sized block of the signal length $`N`$.
 
 ### B. Block-Wise Optimization Process
 
 The one-bit signal at block $p$ is found by minimizing the error energy
-$$
+```math
 \underset{\underline{\hat b}^{(p)} \in \mathbb{B}^M}{\text{min}}~{E}(\underline{x}^{(p)},\underline{\hat b}^{(p)}) =  \left\| \underline{\hat{e}}^{(p)} \right\|_2^2. \tag{13}
-$$
+```
 
-Due to the lower-triangular structure of ${W}$, we can express the error for block $p$ as
-$$
+Due to the lower-triangular structure of $`{W}`$, we can express the error for block $`p`$ as
+```math
 \underline{\hat{e}}^{(p)} = \hat{W}^{(0)} (\underline{x}^{(p)} - \underline{\hat{b}}^{(p)}) + \underline{\hat{c}}_e^{(p)}, \tag{14}
-$$
+```
 
-where $\hat{W}^{(0)}$ is the main block diagonal of ${W}$, and $\underline{\hat{c}}_e^{(p)}$ is the accumulated error from previous blocks
-$$
+where $`\hat{W}^{(0)}`$ is the main block diagonal of $`{W}`$, and $`\underline{\hat{c}}_e^{(p)}`$ is the accumulated error from previous blocks
+```math
 \underline{\hat{c}}_e^{(p)} = \begin{cases} 
     \sum_{k=1}^{p} \hat{W}^{(k)} (\underline{x}^{(p - k)} - \underline{\hat{b}}^{(p - k)}), & \text{if } p \geq k \\
     \underline{0}, & \text{otherwise}
 \end{cases}.  \tag{15}
-$$ 
+```
 
-In this formulation, $\hat{W}^{(k)}$ represents the weight matrices corresponding to the filter's impulse response at block step $k$. The lower-triangular structure ensures that for $k \geq 1$, the matrices $\hat{W}^{(k)}$ involve only the already determined $\underline{\hat{b}}^{(p - k)}$ from previous blocks. The optimization problem for block $p$ simplifies to:
-$$
+In this formulation, $`\hat{W}^{(k)}`$ represents the weight matrices corresponding to the filter's impulse response at block step $`k`$. The lower-triangular structure ensures that for $k \geq 1$, the matrices $`\hat{W}^{(k)}`$ involve only the already determined $`\underline{\hat{b}}^{(p - k)}`$ from previous blocks. The optimization problem for block $`p`$ simplifies to:
+```math
 \underline{\hat{b}}^{(p)} = \underset{\underline{\hat{b}}^{(p)} \in \mathbb{B}^M}{\arg\min} \left\| \hat{W}^{(0)} (\underline{x}^{(p)} - \underline{\hat{b}}^{(p)}) + \underline{\hat{c}}_e^{(p)} \right\|_2^2. \tag{16}
-$$
+```
 
-Finding $\underline{\hat{b}}^{(p)}$ minimizes the $l^2$-norm in (\ref{eq:TotalError}), which depends on the current block and the accumulated error from previous blocks, as shown in (\ref{eq:AccumulatedError}) and illustrated in Figure 3.
+Finding $`\underline{\hat{b}}^{(p)}`$ minimizes the $`l^2`$-norm in (13), which depends on the current block and the accumulated error from previous blocks, as shown in (15) and illustrated in Figure 3.
 
 ### C. Complexity and Importance of the Filter Selection
 
-Ideally, the optimization shapes the quantization errors to the frequency domain $\omega \notin \omega_D$, which corresponds to the inverse of $W(z)$, i.e., the z-transform of $\underline{w}$. Furthermore, by using block-optimization, we optimize over $M$ coefficients in $\hat{W}^{(0)}$.
+Ideally, the optimization shapes the quantization errors to the frequency domain $'\omega \notin \omega_D`$, which corresponds to the inverse of $`W(z)`$, i.e., the z-transform of $`\underline{w}`$. Furthermore, by using block-optimization, we optimize over $`M`$ coefficients in $`\hat{W}^{(0)}`$.
 
-It turns out that using a minimum-phase system for $\underline{w}$ significantly improves the block optimization results. In such systems, all zeros of the transfer function $W(z)$ lie inside the unit circle in the $z$-domain (i.e., $|z_i| < 1$ for all zeros $z_i$ of $W(z)$), ensuring the stability of the inverse system $W(z)^{-1}$. Moreover, because the impulse response of a minimum-phase system decays rapidly, the most significant filter coefficients are concentrated in $\hat{W}^{(0)}$. Therefore, we efficiently reduce the overall error, as contributions from later coefficients (in $\hat{W}^{(k)}$ for $k > 0$) are less impactful due to rapid energy decay.
+It turns out that using a minimum-phase system for $`\underline{w}`$ significantly improves the block optimization results. In such systems, all zeros of the transfer function $W(z)$ lie inside the unit circle in the $`z`$-domain (i.e., $`|z_i| < 1`$ for all zeros $`z_i`$ of $`W(z)`$), ensuring the stability of the inverse system $`W(z)^{-1}`$. Moreover, because the impulse response of a minimum-phase system decays rapidly, the most significant filter coefficients are concentrated in $`\hat{W}^{(0)}`$. Therefore, we efficiently reduce the overall error, as contributions from later coefficients (in $`\hat{W}^{(k)}`$ for $`k > 0`$) are less impactful due to rapid energy decay.
 
-While optimizing over the entire signal length $N = M \cdot P$ has complexity $\mathcal{O}(2^{(M \cdot P)})$, the block-wise method reduces this to $\mathcal{O}(2^M \cdot P)$, significantly lowering the cost for large $N$. This reduction in complexity comes without sacrificing the ability to capture more global information across the signal. Although the optimal solution, $\underline{b}^{\ast}$, achieves the lowest error, it remains computationally prohibitive for large-scale problems.
+While optimizing over the entire signal length $`N = M \cdot P`$ has complexity $`\mathcal{O}(2^{(M \cdot P)})`$, the block-wise method reduces this to $`\mathcal{O}(2^M \cdot P)`$, significantly lowering the cost for large $`N`$. This reduction in complexity comes without sacrificing the ability to capture more global information across the signal. Although the optimal solution, $`\underline{b}^{\ast}`$, achieves the lowest error, it remains computationally prohibitive for large-scale problems.
 
 ## V. Numerical Simulations and Enhancements
 
 In order to validate the proposed block-based optimization for one-bit quantization (OBBQ), we investigate a lowpass signal and a band-pass signal. These simulations show the algorithm's performance in shaping quantization noise while maintaining a high signal-to-error ratio  
-$$
+```math
 \text{SER} = 10 \log_{10}\left(\frac{||\underline{x}||^2_2}{||\underline{e}||^2_2}\right)\text{dB}.
-$$
+```
 
 ### A. Lowpass Signal
 
-We designed a multitone signal with uniformly distributed frequency bins within the band $\omega_D = \left[0, \frac{166}{4096} \pi\right]$ and randomly assigned phases between $0$ and $2\pi$. The signal is normalized such that $\underline{x} \in [-1, 1]^N$, with a length of $N = 4096$ samples.  
-For the quantization process, we employed a minimum-phase FIR lowpass filter $W$ with a cutoff frequency of $\omega_c = \frac{166}{4096} \pi$ and a filter length of $L = 163$, using a block size of $M = 32$ samples.  
-The reconstruction and SER calculations were performed using an ideal reconstruction filter $R$ with the same cutoff frequency, $\omega_r = \frac{166}{4096}\pi$.
+We designed a multitone signal with uniformly distributed frequency bins within the band $`\omega_D = \left[0, \frac{166}{4096} \pi\right]`$ and randomly assigned phases between $`0`$ and $`2\pi`$. The signal is normalized such that $`\underline{x} \in [-1, 1]^N`$, with a length of $`N = 4096`$ samples.  
+For the quantization process, we employed a minimum-phase FIR lowpass filter $`W`$ with a cutoff frequency of $`\omega_c = \frac{166}{4096} \pi`$ and a filter length of $`L = 163`$, using a block size of $`M = 32`$ samples.  
+The reconstruction and SER calculations were performed using an ideal reconstruction filter $`R`$ with the same cutoff frequency, $`\omega_r = \frac{166}{4096}\pi`$.
 
 <figure>
   <img src="i_img/spectrumSDQOBBQ.png" width="80%"/>
@@ -272,8 +272,8 @@ The improvement can be attributed to the algorithm's enhanced capacity to distri
 
 ### B. Bandpass Signal
 
-For the quantization of a bandpass signal, we also designed a multitone signal with uniformly distributed frequency bins within the band $\omega_D = \left[\frac{616}{4096}\pi, \frac{862}{4096}\pi\right]$ and randomly assigned phases between $0$ and $2\pi$.  
-The signal was normalized to $\underline{x} \in [-1, 1]^N$, with a length of $N = 4096$ samples. We applied a minimum-phase FIR bandpass filter with cutoff frequencies matching the boundaries of $\omega_D$ and a filter length of $L = 141$, using a block size of $M = 32$ samples.
+For the quantization of a bandpass signal, we also designed a multitone signal with uniformly distributed frequency bins within the band $`\omega_D = \left[\frac{616}{4096}\pi, \frac{862}{4096}\pi\right]`$ and randomly assigned phases between $`0`$ and $`2\pi`$.  
+The signal was normalized to $`\underline{x} \in [-1, 1]^N`$, with a length of $`N = 4096`$ samples. We applied a minimum-phase FIR bandpass filter with cutoff frequencies matching the boundaries of $\omega_D$ and a filter length of $`L = 141`$, using a block size of $`M = 32`$ samples.
 
 As shown in Figure 6, the OBBQ shaped the quantization noise effectively outside the band of interest, achieving an SER of 40.06 dB while suppressing noise effectively outside the bandpass domain $\omega_D$.
 
@@ -281,9 +281,9 @@ A direct comparison with the SDQ and the OBAQ was not feasible, as both methods 
 
 ## Conclusions
 
-This paper introduced a block-based optimization framework for one-bit quantization (OBBQ), demonstrating its flexibility in handling various frequency bands. The ability to shape noise outside of a desired signal bandwidth $\omega_D$, as shown in Section \ref{sec:NumSim}, highlights the versatility of this approach.
+This paper introduced a block-based optimization framework for one-bit quantization (OBBQ), demonstrating its flexibility in handling various frequency bands. The ability to shape noise outside of a desired signal bandwidth $`\omega_D`$, as shown in Section V, highlights the versatility of this approach.
 
-The block-wise structure reduces computational complexity while maintaining high accuracy, making it suitable for applications with limited resources and highlighting its potential to further advance one-bit quantization techniques. This flexible approach adapts to diverse signal processing challenges, delivering competitive performance. Additionally, using smaller block sizes $M$ for optimization suggests that this approach could be implemented on resource-constrained platforms such as microcontrollers or real-time embedded systems. Although this aspect has not been explored in detail in this paper, it opens up promising opportunities for future research, where the algorithm could be adapted for efficient real-time processing. Future work could also explore optimizing the framework for different types of filters or integrating adaptive techniques such as machine learning to further enhance performance.
+The block-wise structure reduces computational complexity while maintaining high accuracy, making it suitable for applications with limited resources and highlighting its potential to further advance one-bit quantization techniques. This flexible approach adapts to diverse signal processing challenges, delivering competitive performance. Additionally, using smaller block sizes $`M`$ for optimization suggests that this approach could be implemented on resource-constrained platforms such as microcontrollers or real-time embedded systems. Although this aspect has not been explored in detail in this paper, it opens up promising opportunities for future research, where the algorithm could be adapted for efficient real-time processing. Future work could also explore optimizing the framework for different types of filters or integrating adaptive techniques such as machine learning to further enhance performance.
 
 <details>
 <summary>Open Literature </summary>
