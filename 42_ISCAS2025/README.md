@@ -229,7 +229,7 @@ Finding $`\underline{\hat{b}}^{(p)}`$ minimizes the $`l^2`$-norm in (13), which 
 
 ### C. Complexity and Importance of the Filter Selection
 
-Ideally, the optimization shapes the quantization errors to the frequency domain $'\omega \notin \omega_D`$, which corresponds to the inverse of $`W(z)`$, i.e., the z-transform of $`\underline{w}`$. Furthermore, by using block-optimization, we optimize over $`M`$ coefficients in $`\hat{W}^{(0)}`$.
+Ideally, the optimization shapes the quantization errors to the frequency domain $`\omega \notin \omega_D`$, which corresponds to the inverse of $`W(z)`$, i.e., the z-transform of $`\underline{w}`$. Furthermore, by using block-optimization, we optimize over $`M`$ coefficients in $`\hat{W}^{(0)}`$.
 
 It turns out that using a minimum-phase system for $`\underline{w}`$ significantly improves the block optimization results. In such systems, all zeros of the transfer function $W(z)$ lie inside the unit circle in the $`z`$-domain (i.e., $`|z_i| < 1`$ for all zeros $`z_i`$ of $`W(z)`$), ensuring the stability of the inverse system $`W(z)^{-1}`$. Moreover, because the impulse response of a minimum-phase system decays rapidly, the most significant filter coefficients are concentrated in $`\hat{W}^{(0)}`$. Therefore, we efficiently reduce the overall error, as contributions from later coefficients (in $`\hat{W}^{(k)}`$ for $`k > 0`$) are less impactful due to rapid energy decay.
 
