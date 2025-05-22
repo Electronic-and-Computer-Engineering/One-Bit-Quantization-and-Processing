@@ -136,7 +136,7 @@ w_1 & w_0 & \ddots & \vdots \\
 \vdots & & \ddots & 0 \\
 w_{N-1} & \cdots & w_1 & w_0
 \end{bmatrix}, \quad w_0 \neq 0. \tag{10}
-```$$```
+```
 
 All elements above the main diagonal are zero, and arbitrary entries over $`\mathbb{R}`$ are located on or below the main diagonal.
 

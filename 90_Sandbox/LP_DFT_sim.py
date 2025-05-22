@@ -26,11 +26,11 @@ np.seterr(all='ignore')
 
 sNbins    = 2048
  
-sBlockSize = 256 #32
-sM         = 64#16
+sBlockSize = 512 #32
+sM         = 128#16
 sL         = sBlockSize - sM
-sHop       = 16
-sK         = 6144
+sHop       = 8
+sK         = 4096
 
 sBSize = 16
 
@@ -60,14 +60,16 @@ vx, vTime = sg.signalGen(v_n, vxFrequ, vxPhase, sFs, 'real')
 vx = sg.MFnormalize(vx, -1, 1)
 ################################################
 ##########  ########  #######  #################
-vLPRangeFs      = [0, sSigFmax+5]
-vLPfilterRad    = sg.freq2rad(vLPRangeFs, sFs)
+vLPRangeFs          = [0, sSigFmax+1]
+vLPfilterRad        = sg.freq2rad(vLPRangeFs, sFs)
+vLPRangeFs          = [0, sSigFmax]
+vLPfilterRadIdeal   = sg.freq2rad(vLPRangeFs, sFs)
 vBPRangeFs      = [139, 311]
 vBPRangeRad     = sg.freq2rad(vBPRangeFs, sFs)
 mOptFilterRange = np.vstack((vLPfilterRad, vBPRangeRad))
 vMaxVal         = [1.0, 0.0]
 ### Generate ideal matrices ###
-vRIdeal, vRIdealShift, vW = filt.idealBinFilt(sNbins, vLPfilterRad, vMaxVal[0], 0.0, True)
+vRIdeal, vRIdealShift, vW = filt.idealBinFilt(sNbins, vLPfilterRadIdeal, vMaxVal[0], 0.0, True)
 mRIdeal = scLinAlg.toeplitz(vRIdeal)
 
 sFpb        = sSigFmax
@@ -91,11 +93,10 @@ vBSequBlock, vEL2, vBlockIdx = obq.iterBlockQ(vx, vWcoeffcut, sBSize, 'grb')
 np.save('saves/vBSequBlock.npy', vBSequBlock)
 
 # Quantize the input signal
-_,_,vW = filt.idealBinFilt(sNbins, vLPfilterRad, vMaxVal[0], 0.0, True)
+_,_,vW = filt.idealBinFilt(sNbins, vLPfilterRadIdeal, vMaxVal[0], 0.0, True)
 vW_tw = np.abs(np.fft.fft(vWcoeff,sK))
 vBDFT = obq.iterBlockQDFT(vx, mOptFilterRange, sK, sL, sM, sHop, 'grb', True, 1)
 np.save('saves/vBDFT.npy', vBDFT)
-
 
 #%%
 # EVALUATION

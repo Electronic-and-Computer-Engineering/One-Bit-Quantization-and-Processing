@@ -39,10 +39,10 @@ def iterBlockQDFT(vx, vRange, sK, sL, sM, sHop, sType='grb', verbose=True, nIter
                     print(f"Skipping block {m}: exceeds signal length.")
                 continue
             
-            vbL     = vb[sStIdx : (sStIdx + sL)]
+            vbL      = vb[sStIdx : (sStIdx + sL)]
             vbM_init = vb[(sStIdx + sL) : sEndIdx]
-            vxBlock = vx[sStIdx : sEndIdx]
-            vxM     = vx[(sStIdx + sL) : sEndIdx]
+            vxBlock  = vx[sStIdx : sEndIdx]
+            vxM      = vx[(sStIdx + sL) : sEndIdx]
 
             mRIFw_L = mRIFw[:, sStIdx : (sStIdx + sL)]
             mRIFw_M = mRIFw[:, (sStIdx + sL) : sEndIdx]
