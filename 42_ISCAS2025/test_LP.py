@@ -25,20 +25,20 @@ import sg, sa, sp, obq, filt
 
 mtplt.close('all')
 
-sNbins = 4096    
-sBSize = 32
+sNbins = 1024    
+sBSize = 16
 
 #sHop = sBSize
 
 # %% [markdown]
 # Generate input signal
-sNewSignal = False
+sNewSignal = True
 # %%
 ### Signal generation ###
 if sNewSignal:
-    sFs = 4096
-    sSigFmax = 83
-    vxFrequ = (np.arange(0, sSigFmax, step=3)).reshape(-1, 1)
+    sFs = 1024
+    sSigFmax = 41
+    vxFrequ = (np.arange(0, sSigFmax, step=1)).reshape(-1, 1)
     vxPhase = np.random.rand(len(vxFrequ), 1) * 2 * np.pi
 
     np.save('saves/vxFrequ.npy', vxFrequ)
@@ -59,7 +59,10 @@ vx = sg.MFnormalize(vx, -1, 1)
 
 # %%
 ### Generate ideal matrices ###
-vRIdeal, vW = filt.idealBinFilt(sNbins, sg.freq2Bin(sSigFmax, sNbins, sFs), sMinBin=None, sType='lowpass', full=True)
+vLPRangeFs          = [0, 0, sSigFmax, sSigFmax]
+vLPfilterRad        = sg.freq2rad(vLPRangeFs, sFs)
+vRIdeal, vRIdealShift, vW = filt.idealBinFilt(sNbins, vLPfilterRad, 1.0, 0.0, True)
+#vRIdeal, vW = filt.idealBinFilt(sNbins, sg.freq2bin(sSigFmax, sNbins, sFs), sMinBin=None, sType='lowpass', full=True)
 mRIdeal = scLinAlg.toeplitz(vRIdeal)
 
 sFpb        = sSigFmax
@@ -75,7 +78,7 @@ mOnes = np.ones((sNbins,sNbins))
 mSigDeltaFilt = np.tril(mOnes)
 
 vCoeffZ, mLobes = sa.detZC(vWcoeff, None)
-vPruning, sPrunIdx  = sp.enLobePruning(vWcoeff, mLobes, 0.1, 8, True)
+vPruning, sPrunIdx  = sp.enLobePruning(vWcoeff, mLobes, 0.2, 8, True)
 vWcoeffcut = vWcoeff[sPrunIdx::]
 
 filt.plotFrequResp(vw, vH, sFs, sFpb, sFsb, sHpbMin, sHpbMax, sHsbMax, None, None, 'lowpass')

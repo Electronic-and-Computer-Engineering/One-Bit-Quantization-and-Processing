@@ -8,74 +8,82 @@ import matplotlib.gridspec as gridspec
 
 #Linear Algebraic, signal processing
 import scipy.linalg as scLinAlg
-import scipy.signal as sigP
-from scipy.fftpack import hilbert
 
 mtplt.rcParams['mathtext.fontset'] = 'stix'
 mtplt.rcParams['font.family'] = 'STIXGeneral'
 
 # %%
-import sys, os, time
+import sys
 sys.path.append('../01_Library')
 # individual packages
 import sg, sa, sp, obq, filt 
-import globalTools
+
 
 mtplt.close('all')
 np.seterr(all='ignore')
 
 sNbins    = 2048
- 
-sBlockSize = 512 #32
-sM         = 128#16
-sL         = sBlockSize - sM
-sHop       = 8
-sK         = 4096
 
-sBSize = 16
+#sBlockSize = 16 #32
+sM         = 32 #16
+sL_max     = sNbins
+sHop       = 4
+sK         = 256
+sWinLen    = 2*sM+1
+
+sBSize     = 16
 
 # Generate input signal
 ###############################################
 sNewSignal = False ###################  #######
 ### Signal generation ###
 if sNewSignal:
-    sFs = 1024
-    sSigFmax = 50
-    vxFrequ = (np.arange(0, sSigFmax, step=2)).reshape(-1, 1)
+    sFs = 2048
+    sSigFmax = 43
+    sSigFmin = 1
+    sSigFNum = (sSigFmax-sSigFmin) + 1
+    vxFrequ = (np.linspace(sSigFmin, sSigFmax, num=sSigFNum)).reshape(-1, 1)
     vxPhase = np.random.rand(len(vxFrequ), 1) * 2 * np.pi
 
     np.save('saves/vxFrequ.npy', vxFrequ)
     np.save('saves/vxPhase.npy', vxPhase)
     np.save('saves/sSigFmax.npy', sSigFmax)
+    np.save('saves/sSigFmin.npy', sSigFmin)
     np.save('saves/sFs.npy', sFs)
 else:    
     vxFrequ     = np.load('saves/vxFrequ.npy')
     vxPhase     = np.load('saves/vxPhase.npy')
     sSigFmax    = np.load('saves/sSigFmax.npy')
+    sSigFmin    = np.load('saves/sSigFmin.npy')
     sFs         = np.load('saves/sFs.npy') 
 
 sT = 1 / (sFs)
 v_n = np.arange(sNbins).reshape(-1, 1)
 vx, vTime = sg.signalGen(v_n, vxFrequ, vxPhase, sFs, 'real')
 vx = sg.MFnormalize(vx, -1, 1)
+#sQBit = 16
+#sLsB = (2)/(2**sQBit)
+#vx = (np.round(vx/sLsB))/(2**(sQBit-1))
 ################################################
 ##########  ########  #######  #################
-vLPRangeFs          = [0, sSigFmax+1]
+vLPRangeFs          = [sSigFmin, sSigFmin, sSigFmax, sSigFmax]
 vLPfilterRad        = sg.freq2rad(vLPRangeFs, sFs)
-vLPRangeFs          = [0, sSigFmax]
+vLPRangeFs          = [sSigFmin, sSigFmin, sSigFmax, sSigFmax]
 vLPfilterRadIdeal   = sg.freq2rad(vLPRangeFs, sFs)
-vBPRangeFs      = [139, 311]
-vBPRangeRad     = sg.freq2rad(vBPRangeFs, sFs)
-mOptFilterRange = np.vstack((vLPfilterRad, vBPRangeRad))
-vMaxVal         = [1.0, 0.0]
+vLPRangeFsDFT       = [0, 0, sSigFmax+200, sSigFmax+200]
+vLPfilterRadDFT     = sg.freq2rad(vLPRangeFsDFT, sFs)
+vBPRangeFs          = [180, 200, 311, 331]
+vBPRangeRad         = sg.freq2rad(vBPRangeFs, sFs)
+mOptFilterRange     = np.vstack((vLPfilterRad, vBPRangeRad))
+vMaxVal             = [1, 0.5]
 ### Generate ideal matrices ###
-vRIdeal, vRIdealShift, vW = filt.idealBinFilt(sNbins, vLPfilterRadIdeal, vMaxVal[0], 0.0, True)
-mRIdeal = scLinAlg.toeplitz(vRIdeal)
+vrIdeal, vHShift, vMask = filt.idealBinFilt(sNbins, vLPfilterRadIdeal, sValPass=1.0, sValStop=0.0, bFull=True)
+mRIdeal = scLinAlg.toeplitz(vrIdeal)
 
 sFpb        = sSigFmax
-sFsb        = sFpb + 40
+sFsb        = sFpb + 10
 sApbdB      = 0.001
-sAsbdB      = 40
+sAsbdB      = 50
 
 ######## Create Filter ########
 (vWcoeff, vw, vH, sRpb, sRsb, sHpbMin, sHpbMax, sHsbMax) = filt.fir_calcLPKaiser(sFs, sFpb, sFsb, sApbdB, sAsbdB, None, False)
@@ -93,14 +101,19 @@ vBSequBlock, vEL2, vBlockIdx = obq.iterBlockQ(vx, vWcoeffcut, sBSize, 'grb')
 np.save('saves/vBSequBlock.npy', vBSequBlock)
 
 # Quantize the input signal
-_,_,vW = filt.idealBinFilt(sNbins, vLPfilterRadIdeal, vMaxVal[0], 0.0, True)
-vW_tw = np.abs(np.fft.fft(vWcoeff,sK))
-vBDFT = obq.iterBlockQDFT(vx, mOptFilterRange, sK, sL, sM, sHop, 'grb', True, 1)
+_,_,vW = filt.idealBinFilt(sNbins, vLPfilterRadDFT, vMaxVal[0], 0.00001, True)
+#vW_D = sp.getFiltWeights(vW, sK, vLPfilterRad)
+
+vxBlock = mRIdeal @ vx
+vWDFT = abs(np.fft.fft(vWcoeff,1024))
+vBDFT, vBlockErr, vSweepErr = obq.iterBlockQDFT(vx, vWcoeffcut, sK, sM, vLPfilterRadDFT, sHop, 'grb', True, 5)
+#vBDFT, vBlockErr = obq.iterBlockQDFT(vx, vWcoeff, sK, sM, sL_max, vLPfilterRadDFT, sWinLen, sHop, 'grb', True)
+#iterBlockQDFT(vx, vW, sK, sM, sL, mRange, sHop=None, sType='grb', verbose=True)
 np.save('saves/vBDFT.npy', vBDFT)
 
-#%%
+# % % % % % % % % % % % % % % % %
 # EVALUATION
-#
+# % % % % % % % % % % % % % % % %
 vX = np.fft.fft(mRIdeal @ vx)
 vXMag = 20*sa.safelog10(np.abs(vX) / np.max(abs(vX)))
 

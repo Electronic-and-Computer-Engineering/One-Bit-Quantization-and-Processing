@@ -12,7 +12,6 @@ import matplotlib.gridspec as gridspec
 import scipy.linalg as scLinAlg
 import scipy.signal as sigP
 
-
 # %%
 # individual packages
 import sg, sa, sp, obq, filt
