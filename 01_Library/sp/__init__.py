@@ -8,3 +8,5 @@ from .threshPruning  import threshPruning
 from .enLobePruning  import enLobePruning
 from .bitRevOrder    import bitRevOrder
 from .diag_multiply  import diag_multiply
+from .getFiltWeights import getFiltWeights
+from .getBestBlockidx import getBestBlockidx

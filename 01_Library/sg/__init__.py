@@ -10,4 +10,7 @@ from .omegaToFreq import freq2digFc
 from .omegaToFreq import digFc2Freq
 from .binaryComb  import binaryComb
 from .dftMat      import dftMat
+from .energyBounds import symEnergyWin
+from .modHam      import modHamming
+
 

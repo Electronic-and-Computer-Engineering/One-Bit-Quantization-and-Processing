@@ -9,7 +9,7 @@ sys.path.append('../../01_Library')
 import sg, sa, sp, obq, filt
 
 
-def OptDFT(vRIX_t_L, mRIFw_M, vxM, vbM_init):
+def OptDFT(vEl_hat, mRIF_m, vx_m, vb_mInit):
     """
     Args:
         vx: Input vector.
@@ -21,34 +21,34 @@ def OptDFT(vRIX_t_L, mRIFw_M, vxM, vbM_init):
         ve: Error vector
     """
     
-    sM = len(vbM_init)
-    sK = len(vRIX_t_L)
+    sM = len(vx_m)
     
-    mRIFw_M2 = mRIFw_M.T @ mRIFw_M                         # shape: (sM, sM)
+    mRIF_mM2 = mRIF_m.T @ mRIF_m                         # shape: (sM, sM)
     
-    if np.all(vbM_init == 0):
-        sMean = np.mean(vxM)
-        bInit = np.full_like(vxM, 0)
-        bInit[vxM >= sMean] = 1
+    if np.all(vb_mInit == 0):
+        sMean = np.mean(vx_m)
+        bInit = np.full_like(vx_m, 0)
+        bInit[vx_m >= sMean] = 1
     else:
-        bInit = vbM_init.copy()
+        bInit = 2*vx_m.copy()+1
         
-    vRIE    = np.zeros((sK,1)).flatten()
     vb_out  = np.zeros((sM,1)).flatten()
     # GUROBI
     #Mixed-Integer Quadratically Constrained Quadratic Programming (MIQP)
     
     model = gp.Model("MIQP")
     model.setParam("OutputFlag", 0)     # 0 to Suppress Gurobi output
+    model.setParam("MIPFocus", 2)               # Focus on proving optimality
+    model.setParam("Method", 2)                 # Barrier method for root relaxation (robust for QCQP)
+    model.setParam("Presolve", 2)               # Aggressive presolve
+    #model.setParam("Heuristics", 0.75)          # Minimal heuristic distraction
+    #model.setParam("Cuts", 3)                   # Most aggressive cutting planes
+    #model.setParam("VarBranch", 1)              # Strong branching
     model.setParam("TimeLimit",2)
-    model.setParam("VarBranch", 3)
-    model.setParam("MIPFocus", 3)       # Shift focus to finding good feasible solutions quickly
-    model.setParam("Heuristics", 0.9)   # Increase heuristic efforts
-    model.setParam("Presolve", 2)       # More aggressive presolve
-    model.setParam('Method', -1)
+    # model.setParam("Cutpasses",10)
+    #model.setParam("TuneTimeLimit",7200)
     
-    with np.errstate(over='ignore', divide='ignore', invalid='ignore', under='ignore'):
-        term0 = vRIX_t_L.T @ vRIX_t_L
+    term0 = vEl_hat.T @ vEl_hat
     # Decision variables (vb) as binary, mapped to {-1, 1} in the objective
     vb = model.addVars(sM, vtype=gp.GRB.BINARY, name="vb")
     
@@ -56,27 +56,25 @@ def OptDFT(vRIX_t_L, mRIFw_M, vxM, vbM_init):
          vb[j].Start = bInit[j]
     
     model.update()
+    
+    vbDec = {j: 2 * vb[j] - 1 for j in range(sM)}
+    vdHat_m = {j: vx_m[j] - vbDec[j] for j in range(sM)}
 
     # --- Term 1: -2 * X̃_L^T * (R * F_wM * b)
     term1 = gp.LinExpr()
-    for i in range(len(vRIX_t_L)):
-        # Inner product: sum_j (R * F_wM)[i, j] * b[j]
-        for j in range(sM):
-            vbDec = 2*vb[j] - 1
-            if mRIFw_M[i, j] != 0:
+    for i in range(len(vEl_hat)):
+        for j in range(sM):           
+            if mRIF_m[i, j] != 0:
                 # Multiply with X̃_L[i]
-                term1 += mRIFw_M[i, j] * vRIX_t_L[i] * vbDec 
-    term1 *= -2  # Apply scalar factor as in the objective
+                term1 += mRIF_m[i, j] * vEl_hat[i] * vdHat_m[j] 
+    term1 *= 2  # Apply scalar factor as in the objective
 
     # --- Term 2: bᵀ * mRIFw_M2 * b
     term2 = gp.QuadExpr()
     for i in range(sM):
-        vbDec_i = 2*vb[i] - 1
         for j in range(sM):
-            vbDec_j = 2*vb[j] - 1
-            
-            if mRIFw_M2[i, j] != 0:
-                term2 += vbDec_i * mRIFw_M2[i, j] * vbDec_j
+            if mRIF_mM2[i, j] != 0:
+                term2 += vdHat_m[i] * mRIF_mM2[i, j] * vdHat_m[j]
     
     # --- Set the full objective function
     model.setObjective(term0 + term1 + term2, GRB.MINIMIZE)
@@ -85,7 +83,7 @@ def OptDFT(vRIX_t_L, mRIFw_M, vxM, vbM_init):
     for i in range(sM):
             vb_out[i] = (2 * vb[i].X - 1)      
     
-    sBlockErr = mRIFw_M @ (vxM - vb_out)
+    sBlockErr = vEl_hat + mRIF_m @ (vx_m - vb_out)
     sBlockErr = sBlockErr.T @ sBlockErr   
   
     # Output the solution

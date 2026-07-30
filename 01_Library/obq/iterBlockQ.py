@@ -1,16 +1,15 @@
 import numpy as np
 #Linear Algebraic, signal processing
 import scipy.linalg as scLinAlg
-import scipy.signal as sigP
-import obq, misc, globalTools
+import obq, globalTools
 
 def iterBlockQ(vx, vw, sM, sType):
     """
     Args:
-        vx: Input vector.
-        mW: Weight matrix.
-        vC: Constant/Init vector.
-        sL: Number of Decisions
+        vx:     Input vector.
+        mW:     Weight matrix.
+        vC:     Constant/Init vector.
+        sType:  Guroby or Brute-Force
         
     Returns:
         vb: Quantized one-bit vector
@@ -19,8 +18,7 @@ def iterBlockQ(vx, vw, sM, sType):
    
     swLen = len(vw)
     sxLen = len(vx)
-    
-    ve = np.zeros((sxLen,1)).flatten()         
+            
     vb = np.zeros((sxLen,1)).flatten()   
 
     vwFull = np.zeros((sxLen,1)).flatten()

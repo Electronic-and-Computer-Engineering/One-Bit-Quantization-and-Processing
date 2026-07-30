@@ -1,66 +1,49 @@
 import numpy as np
-import sg
 
-def idealBinFilt(sNbins, mRanges, vMaxVal, sMinVal, bFull=False):
+def idealBinFilt(sN, mW, sValPass=1.0, sValStop=0.0, bFull=True):
     """
-    Create ideal lowpass, highpass, or bandpass filter coefficients and spectrum.
-
-    Parameters:
-    sNbins : int
-        Number of bins (samples) in the filter.
-    mRanges: int
-        matrix of ranges in bin (m x 2):
-            m filter ranges with [sMinRad,sMaxRad] each
-    vMaxVal: int
-        matrix of [sMinVal, sMaxVal] for each m filter (m x 2)
-    sMinVal: int
-        minimum value for all NON ranged values    
-    full : bool, optional
-        If True, return the full spectrum (positive and negative frequencies).
-        If False (default), return only the positive frequencies up to pi.
-
-    Returns:
-    vFiltCoeffs : numpy.ndarray
-        The time-domain filter coefficients.
-    vSpectrum : numpy.ndarray
-        The frequency-domain spectrum of the filter.
+    mW : (M,4) array_like
+        Per band: [wStop1, wPass1, wPass2, wStop2] in rad/sample.
+        Linear ramp from sValStop to sValPass between wStop1 and wPass1.
+        Flat sValPass between wPass1 and wPass2.
+        Linear ramp from sValPass to sValStop between wPass2 and wStop2.
     """
+    sN = int(sN)
+    mW = np.asarray(mW, dtype=float)
+    if mW.ndim == 1:
+        mW = mW.reshape(1, 4)
     
-    vIdealSpectrum = np.ones(sNbins) * sMinVal
+    vMask = np.full(sN, float(sValStop), dtype=float)
     
-    if mRanges.ndim == 1:
-        sRows = 1
-        if mRanges[0] < 0:
-            raise ValueError(f"Unsupported minimum value: Value smaller than 0!")
-        elif mRanges[1] > np.pi:
-            raise ValueError(f"Unsupported maximum value: Value bigger than pi!")    
-        
-        sMinBin = sg.rad2bin(mRanges[0],sNbins)
-        sMaxBin = sg.rad2bin(mRanges[1],sNbins)
+    for wStop1, wPass1, wPass2, wStop2 in mW:
+        kStop1 = int(np.ceil((wStop1 / (2*np.pi)) * sN))
+        kPass1 = int(np.floor((wPass1 / (2*np.pi)) * sN))
+        kPass2 = int(np.floor((wPass2 / (2*np.pi)) * sN))
+        kStop2 = int(np.floor((wStop2 / (2*np.pi)) * sN))
 
-        vIdealSpectrum[sMinBin:sMaxBin] = vMaxVal
-        
-    elif mRanges.ndim == 2:
-        sRows = mRanges.shape[0] 
-        for i in range(sRows):
-            if mRanges[i,0] < 0:
-                raise ValueError(f"Unsupported minimum value in range {i}: Value smaller than 0!")
-            elif mRanges[i,1] > np.pi:
-                raise ValueError(f"Unsupported maximum value in range {i}: Value bigger than pi!")    
-            
-            sMinBin = sg.rad2bin(mRanges[i,0],sNbins)
-            sMaxBin = sg.rad2bin(mRanges[i,1],sNbins)
-    
-            vIdealSpectrum[sMinBin:sMaxBin] = vMaxVal[i]
-        
-    if bFull == True:
-        vUpperHalf = vIdealSpectrum[0:sNbins//2].copy()
-        vUpperHalf = vUpperHalf[::-1]
-        vIdealSpectrum[sNbins//2::] = vUpperHalf.copy()
-        
-    # Perform IFFT to get filter coefficients in time domain
-    vFiltCoeffs      = np.fft.ifft(vIdealSpectrum)
-    vFiltCoeffsShift = np.fft.ifftshift(vFiltCoeffs)
-    
-    # Return both the time-domain coefficients and spectrum
-    return vFiltCoeffs.real, vFiltCoeffsShift.real, vIdealSpectrum
+        kStop1 = max(0, min(kStop1, sN//2))
+        kPass1 = max(0, min(kPass1, sN//2))
+        kPass2 = max(0, min(kPass2, sN//2))
+        kStop2 = max(0, min(kStop2, sN//2))
+
+        # Rising ramp: wStop1 -> wPass1
+        if kPass1 > kStop1:
+            vMask[kStop1:kPass1] = np.linspace(sValStop, sValPass, kPass1-kStop1)
+
+        # Flat passband: wPass1 -> wPass2
+        if kPass2 >= kPass1:
+            vMask[kPass1:kPass2+1] = sValPass
+
+        # Falling ramp: wPass2 -> wStop2
+        if kStop2 > kPass2:
+            vMask[kPass2:kStop2] = np.linspace(sValPass, sValStop, kStop2-kPass2)
+
+    if bFull:
+        if sN % 2 == 0:
+            vMask[sN//2+1:] = vMask[1:sN//2][::-1]
+        else:
+            vMask[(sN+1)//2:] = vMask[1:(sN+1)//2][::-1]
+
+    vH      = np.fft.ifft(vMask).real
+    vHShift = np.fft.ifftshift(vH)
+    return vH, vHShift, vMask

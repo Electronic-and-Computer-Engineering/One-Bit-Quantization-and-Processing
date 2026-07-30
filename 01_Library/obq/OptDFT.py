@@ -1,118 +1,105 @@
 import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
-from scipy.signal import get_window
-
-import sys
-sys.path.append('../../01_Library')
-# individual packages
-import sg, sa, sp, obq, filt
 
 
-def OptDFT(vx, vW, sK, vbL, sM):
+def OptDFT(vx_m, vRIX_t_L, mRIFw_m, sM, fTune=False):
     """
+    Solves the per-block Binary Quadratic Program (BQP_p).
+
     Args:
-        vx: Input vector.
-        vW: Desired spectral 
-        K: K values for DFT
-        
+        vx_m:      Current M-block signal samples,        shape: (sM,)
+        vRIX_t_L:  Spectral target E^l + Fw^M @ x^M,     shape: (2K,)
+        mRIFw_m:   Real/imag stacked projection matrix,   shape: (2K x sM)
+        sM:        Block length
+        fTune:     If True, runs Gurobi's parameter tuner (model.tune())
+                   on THIS block instead of solving with fixed settings.
+                   Use this by picking one call site in your loop (e.g.
+                   via `if m == some_index: fTune=True`) to tune on a
+                   real, representative block.
     Returns:
-        vb: Quantized one-bit vector
-        ve: Error vector
+        vb_out:    Quantized one-bit block,               shape: (sM,)
+        sBlockErr: Scalar block error
+        tune_info: ONLY returned if fTune=True (3-tuple instead of 2).
+                   dict with:
+                     n_found       -- wie viele Parameter-Sets gefunden wurden
+                     prm_files     -- Liste der gespeicherten .prm-Dateien,
+                                       bestes zuerst (rank0..rank4)
+                     best_runtime  -- Laufzeit mit dem besten gefundenen Set
+                     best_objval   -- damit erreichter Zielfunktionswert
     """
-    # Zero-Pad to the next pow2 value
-    sLenVx = len(vx)
-    #sN     = 2 ** int(np.ceil(np.log2(sLenVx)))
-    #vx     = np.pad(vx, (0, sN - sLenVx), mode='constant')
-    # Precompute sine and cosine coefficients for the DFT
-    
-    sL = len(vbL)
-    vxOptBlock = vx[sL::]
-    sBlockMean = np.mean(vxOptBlock)
-    # Initialize the binary vector based on the mean
-    bInit = np.full_like(vxOptBlock, 0)
-    bInit[sBlockMean >= 0] = 1
-    
-    # Windowing
-    #vWm = get_window("blackman", sM)
-    #vx[sL::] = vxOptBlock * vWm
-    #vx = vx * w
-    
-    # DFT matrix (K x N)
-    F = sg.dftMat(sLenVx, sK)                 # shape: (sK x sBlockLen)
-    Fw = np.diag(vW) @ F                      # shape: (sK x sBlockLen)
+    vb_ls  = np.linalg.lstsq(mRIFw_m, vRIX_t_L, rcond=None)[0]
+    vbInit = np.where(vb_ls >= 0, 1.0, 0.0)
 
-    # Split DFT matrix
-    Fw_L = Fw[:, :sL]                         # shape: (sK x sL)
-    Fw_M = Fw[:, sL:]                         # shape: (sK x sM)
+    model = gp.Model("BQP")
 
-    # Spectral target with weighting
-    vX_t = Fw @ vx                            # shape: (sK,)
-    vX_t_L = vX_t - Fw_L @ vbL                # shape: (sK,)
+    if fTune:
+        model.setParam("OutputFlag", 1)
+        model.setParam("TuneTimeLimit", 1800)
+        model.setParam("TimeLimit",    2)
+    else:
+        model.setParam("OutputFlag",   0)
+        model.setParam("TimeLimit",    1)
+        # model.setParam("VarBranch",   -1)
+        # model.setParam("MIPFocus",     2)
+        # model.setParam("Heuristics",   0.5)
+        # model.setParam("Presolve",     2)
+        # model.setParam("Cuts",         1)
+        # model.setParam("MIPGap",       0)
+        # model.setParam("NumericFocus", 1)
 
-    # Real/Imaginary split for real-valued optimization
-    vRIX_t_L = np.hstack([vX_t_L.real, vX_t_L.imag])       # shape: (2K,)
-    mRIFw_M  = np.vstack([Fw_M.real, Fw_M.imag])           # shape: (2K, sM)
-    mRIFw_M2 = mRIFw_M.T @ mRIFw_M                         # shape: (sM, sM)
-    
-    vRIE    = np.zeros((len(vRIX_t_L),1)).flatten()
-    vb_out  = np.zeros((sM,1)).flatten()
-    # GUROBI
-    #Mixed-Integer Quadratically Constrained Quadratic Programming (MIQP)
-    model = gp.Model("MIQCP")
-    
-    model.setParam("OutputFlag", 0)
-    model.setParam("TimeLimit", 0.5)  # Increase numerical focus  
-    model.setParam("VarBranch", 3) 
-    model.setParam("MIPFocus", 0)  # Shift focus to finding good feasible solutions quickly
-    model.setParam("Heuristics", 0.9)  # Increase heuristic efforts
-    model.setParam("Presolve", 2)  # More aggressive presolve
-    model.setParam("Cuts", 3)  # More aggressive cut generation
-    model.setParam("MIPGap", 0)
-    #model.setParam("TuneTimeLimit", 3600)
-    
-    term0 = vRIX_t_L.T @ vRIX_t_L
-    # Decision variables (vb) as binary, mapped to {-1, 1} in the objective
-    vb = model.addVars(sM, vtype=gp.GRB.BINARY, name="vb")
-    
+    vb = model.addVars(sM, vtype=GRB.BINARY, name="vb")
     for j in range(sM):
-         vb[j].Start = bInit[j]
-    
+        vb[j].Start = int(vbInit[j])
     model.update()
 
-    # --- Term 1: -2 * X̃_L^T * (R * F_wM * b)
-    term1 = gp.LinExpr()
-    for i in range(len(vRIX_t_L)):
-        # Inner product: sum_j (R * F_wM)[i, j] * b[j]
-        for j in range(sM):
-            vbDec = 2*vb[j] - 1
-            if mRIFw_M[i, j] != 0:
-                # Multiply with X̃_L[i]
-                term1 += mRIFw_M[i, j] * vRIX_t_L[i] * vbDec 
-    term1 *= -2  # Apply scalar factor as in the objective
+    vbDec = {j: 2 * vb[j] - 1 for j in range(sM)}
 
-    # --- Term 2: bᵀ * mRIFw_M2 * b
-    term2 = gp.QuadExpr()
-    for i in range(sM):
-        vbDec_i = 2*vb[i] - 1
-        for j in range(sM):
-            vbDec_j = 2*vb[j] - 1
-            
-            if mRIFw_M2[i, j] != 0:
-                term2 += vbDec_i * mRIFw_M2[i, j] * vbDec_j
-    
-    # --- Set the full objective function
-    model.setObjective(term0 + term1 + term2, GRB.MINIMIZE)
-    model.optimize()
-    
-    for i in range(sM):
-            vb_out[i] = (2 * vb[i].X - 1)      
-    
-    blockErr = term0 + -2 * vRIX_t_L.T @ (mRIFw_M @ vb_out) + vb_out.T @ (mRIFw_M2 @ vb_out)         
-    # Output the solution
-    if model.status == gp.GRB.OPTIMAL:
-        print("Optimal solution found.")
+    obj = gp.QuadExpr()
+    for i in range(mRIFw_m.shape[0]):
+        se = vRIX_t_L[i] - gp.quicksum(
+            mRIFw_m[i, j] * vbDec[j] for j in range(sM)
+        )
+        obj += se * se
+
+    model.setObjective(obj, GRB.MINIMIZE)
+
+    if fTune:
+        model.setParam("TuneTrials", 3)     # Wiederholungen pro Kandidat
+        model.setParam("TuneOutput", 1)     # etwas Fortschritts-Log
+        model.tune()
+
+        # WICHTIG: model.tune() loest das Modell NICHT -- es durchsucht nur
+        # den Parameterraum und laedt KEINE Loesung ins Modell. Ohne
+        # getTuneResult()+optimize() waere vb[j].X weiter unten nicht
+        # verfuegbar und wuerde crashen.
+        n_found = model.tuneResultCount
+        prm_files = []
+        for i in range(min(n_found, 5)):
+            model.getTuneResult(i)
+            fname = f"tune_rank{i}.prm"
+            model.write(fname)
+            prm_files.append(fname)
+
+        # bestes gefundenes Set laden und einmal wirklich loesen
+        model.getTuneResult(0)
+        model.optimize()
+
+        tune_info = {
+            "n_found":     n_found,
+            "prm_files":   prm_files,          # beste zuerst, rank0..rank4
+            "best_runtime": model.Runtime,     # Laufzeit mit bestem Set
+            "best_objval":  model.ObjVal,      # erreichter Zielfunktionswert
+        }
     else:
-        print("No optimal solution found.")
-        
-    return vb_out, blockErr
+        model.optimize()
+
+    vb_out = np.array([2 * vb[j].X - 1 for j in range(sM)])
+    sBlockErr = float(np.linalg.norm(vRIX_t_L - mRIFw_m @ vb_out) ** 2)
+
+    bOptimal = model.status == GRB.OPTIMAL
+    print(" ✓ Optimal   " if bOptimal else " ✗ SubOptimal", end='', flush=True)
+
+    if fTune:
+        return vb_out, sBlockErr, tune_info
+    return vb_out, sBlockErr
