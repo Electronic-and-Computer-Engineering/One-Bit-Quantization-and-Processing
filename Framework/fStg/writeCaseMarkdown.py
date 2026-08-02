@@ -1,45 +1,37 @@
 import os
 import numpy as np
 
-def writeCaseMarkdown(caseDir, strCaseName, dCase):
+
+def fmtVal(val):
+    """Format a single value as a one-line string."""
+    if isinstance(val, np.ndarray):
+        return "[" + "; ".join(", ".join(f"{x:.6f}" for x in np.atleast_1d(row))
+                               for row in np.atleast_2d(val)) + "]"
+    return str(val)
+
+
+def writeCaseMarkdown(strDir, strCaseName, dCase):
     """
-    Create README.md inside caseDir containing all case settings.
+    Write strDir/<strCaseName>.md containing all fields of dCase.
+
+    The dict is iterated instead of using a fixed field list, so new
+    entries in vCases show up in the markdown automatically and stay
+    discoverable via full-text search.
     """
+    vLines = [f"# {strCaseName}", ""]
 
-    lines = []
-    lines.append(f"# Case: {dCase['caseCode']}\n")
+    for strKey, val in dCase.items():
+        if isinstance(val, dict):
+            vLines.append(f"- {strKey}:")
+            for strSub, subVal in val.items():
+                vLines.append(f"    - {strSub}: {fmtVal(subVal)}")
+        else:
+            vLines.append(f"- {strKey}: {fmtVal(val)}")
 
-    # --- scalar settings
-    lines.append("## Core settings")
-    lines.append(f"- sN: {dCase['sN']}")
-    lines.append(f"- sL: {dCase['sL']}")
-    lines.append(f"- sBatchSize: {dCase['sBatchSize']}")
-    lines.append(f"- sBeta: {dCase['sBeta']}")
-    lines.append(f"- sBound: {dCase['sBound']}\n")
+    vLines.append("")
 
-    # --- band matrices
-    lines.append("## Band definitions")
+    strPath = os.path.join(strDir, strCaseName + ".md")
+    with open(strPath, "w") as f:
+        f.write("\n".join(vLines))
 
-    mWD = np.asarray(dCase["mWD"])
-    mR  = np.asarray(dCase["mR"])
-
-    lines.append("### mWD (signal bands)")
-    for row in mWD:
-        lines.append(f"- [{row[0]:.6f}, {row[1]:.6f}]")
-
-    lines.append("\n### mR (reconstruction bands)")
-    for row in mR:
-        lines.append(f"- [{row[0]:.6f}, {row[1]:.6f}]")
-
-    # --- kaiser
-    k = dCase["kaiser"]
-    lines.append("\n## Kaiser filter settings")
-    lines.append(f"- sApb: {k['sApb']}")
-    lines.append(f"- sAsb: {k['sAsb']}")
-    lines.append(f"- sDeltaW: {k['sDeltaW']}")
-    lines.append(f"- bMinPhase: {k['bMinPhase']}")
-
-    # --- write file
-    readmePath = os.path.join(caseDir, f"{strCaseName}.md")
-    with open(readmePath, "w") as f:
-        f.write("\n".join(lines))
+    return strPath

@@ -12,108 +12,94 @@ import matplotlib.gridspec as gridspec
 # %%
 # individual packages
 import os
-import importlib
-# sys.path.append('../01_Library')
 # individual packages created
 # We would add more if neccessary
-import sg, sa, sp, filt, fStg
-importlib.reload(sp)
-importlib.reload(sg)
-importlib.reload(sa)
-importlib.reload(filt)
-importlib.reload(fStg)
+import sg, sa, filt, fStg
 
 vCases = [
-    {"caseCode":"REAL_FIXED_ONBIN","sBatchSize":2000,"sN":2048,"sM":32,"sL":213,"sBeta":0.0,"mWD":np.array([[np.pi/180,np.pi/10],[3*np.pi/10,4*np.pi/10]]),
+    {"strSig":"real","vAmp":None,"vPhase":None,"bUseCos":True,"sBatchSize":2000,"sN":2048,"sM":32,"sL":213,"sBeta":0.0,"mWD":np.array([[np.pi/180,np.pi/10],[3*np.pi/10,4*np.pi/10]]),
      "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":80.0,"sDeltaW":np.pi/180,"bMinPhase":False}},
     
-    {"caseCode":"REAL_FIXED_OFFBIN","sBatchSize":100,"sN":2048,"sM":32,"sL":213,"sBeta":0,"mWD":np.array([[np.pi/180,np.pi/10],[3*np.pi/10,4*np.pi/10]]),
+    {"strSig":"real","vAmp":"ampRnd","vPhase":None,"bUseCos":True,"sBatchSize":100,"sN":2048,"sM":32,"sL":213,"sBeta":0.5,"mWD":np.array([[np.pi/180,np.pi/10],[3*np.pi/10,4*np.pi/10]]),
      "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":80.0,"sDeltaW":np.pi/180,"bMinPhase":False}}
         ]
 
+os.makedirs("TestBatches", exist_ok=True)
+
 for dictCase in vCases:
-    
+
     caseDirName  = fStg.makeCaseName(dictCase)
-    os.makedirs("TestBatches", exist_ok=True)
-    
+
     ## SETTINGS
-    #   
-    # 
+    #
+    #
     sBatchSize   = dictCase["sBatchSize"]
     sN           = dictCase["sN"]
     sL           = dictCase["sL"]
     sBeta        = dictCase["sBeta"]
+    sBound       = dictCase["sBound"]
+    strSig       = dictCase["strSig"]
     mWD          = dictCase["mWD"]    #provide /omega_{min} and /omega_{max} zones, each row indicates new zone
-    vK           = sg.getKFromWD(mWD,sN)
     mR           = dictCase["mR"]
     sM           = dictCase["sM"]
-    bMinPhase    = dictCase["kaiser"]["bMinPhase"]
-    
-    mx = np.zeros((sN, sBatchSize), dtype=float)
+    dictKaiser   = dictCase["kaiser"]
+    vAmp         = dictCase["vAmp"]
+    vPhase       = dictCase["vPhase"]
+    bUseCos      = dictCase["bUseCos"]
+    bMinPhase    = dictKaiser["bMinPhase"]
+
+    vK           = sg.getKFromWD(mWD,sN)
+
+    mx = np.zeros((sN, sBatchSize), dtype=complex if strSig == "complex" else float)
+
+    # %% Filter design -- constant within a case, therefore outside the batch loop
 
     # non-ideal FIRs (Kaiser)
-    mw_all = np.zeros((sL, sBatchSize), dtype=float)
-    mr_all = np.zeros((sL, sBatchSize), dtype=float)
+    (vw, vOmegaW, vHrespW, sRpbW, sRsbW, sHpbMinW, sHpbMaxW, sHsbMaxW) = filt.fir_calcMBKaiser(
+        mWD=mWD,
+        sApb=dictKaiser["sApb"],
+        sAsb=dictKaiser["sAsb"],
+        sDeltaW=dictKaiser["sDeltaW"],   # width
+        sTaps=sL,
+        sMinPhase=bMinPhase
+    )
 
-    # ideal FIRs (IFFT-mask), length = sN
-    mwIdeal_all = np.zeros((sN, sBatchSize), dtype=float)
-    mrIdeal_all = np.zeros((sN, sBatchSize), dtype=float)
-    
+    (vr, vOmegaR, vHrespR, sRpbR, sRsbR, sHpbMinR, sHpbMaxR, sHsbMaxR) = filt.fir_calcMBKaiser(
+        mWD=mR,
+        sApb=dictKaiser["sApb"],
+        sAsb=dictKaiser["sAsb"],
+        sDeltaW=dictKaiser["sDeltaW"],   # width
+        sTaps=sL,
+        sMinPhase=bMinPhase
+    )
+
+    # ideal FFT mask
+    vwIdeal, vHShiftW, vMaskW = filt.idealBinFiltFromMW(sN, mWD, sValPass=1.0, sValStop=0.0, bFull=True)
+    vrIdeal, vHShiftR, vMaskR = filt.idealBinFiltFromMW(sN, mR,  sValPass=1.0, sValStop=0.0, bFull=True)
+
+    # %% Generation
+    fnSignal = sg.signalComplex if strSig == "complex" else sg.signalReal
+
     for idxBatch in range(sBatchSize):
-    
-        # %% Generation
-        vx, _   = sg.signalReal(vK, sN, sBeta)     # Create Signal
-        vx      = sg.boundRange(vx)            # Bound the Signal to given range
-        
-        dictKaiser   = dictCase["kaiser"]
-        (vw, vOmegaW, vHresp, sRpb, sRsb, sHpbMin, sHpbMax, sHsbMax) = filt.fir_calcMBKaiser(
-            mWD=mWD,
-            sApb=dictKaiser["sApb"],
-            sAsb=dictKaiser["sAsb"],
-            sDeltaW=dictKaiser["sDeltaW"],   # width
-            sTaps=dictCase["sL"],
-            sMinPhase=dictKaiser["bMinPhase"]
-        )
-        
-        (vr, vOmegaR, vHresp, sRpb, sRsb, sHpbMin, sHpbMax, sHsbMax) = filt.fir_calcMBKaiser(
-            mWD=mR,
-            sApb=dictKaiser["sApb"],
-            sAsb=dictKaiser["sAsb"],
-            sDeltaW=dictKaiser["sDeltaW"],   # width
-            sTaps=dictCase["sL"],
-            sMinPhase=dictKaiser["bMinPhase"]
-        )
-        
-        vwIdeal, vHShift, vMask = filt.idealBinFiltFromMW(sN, mWD, sValPass=1.0, sValStop=0.0, bFull=True)
-        vrIdeal, vHShift, vMask = filt.idealBinFiltFromMW(sN, mR, sValPass=1.0, sValStop=0.0, bFull=True)
-        
-        mx[:,idxBatch]              = vx.copy()
-        mw_all[:,idxBatch]          = vw.copy()
-        mr_all[:,idxBatch]          = vr.copy()
-        mwIdeal_all[:,idxBatch]     = vwIdeal.copy()
-        mrIdeal_all[:,idxBatch]     = vrIdeal.copy()
 
+        vx, _   = fnSignal(vK, sN, sBeta, vAmp, vPhase, bUseCos)          # Create Signal
+        vx      = sg.boundRange(vx, sBound)        # Bound the Signal to given range
+
+        mx[:,idxBatch] = vx
+
+    # %% Save
     np.savez(
     os.path.join("TestBatches", caseDirName + ".npz"),
     mx          = mx,
-    mw          = mw_all,
-    mr          = mr_all,
-    mwIdeal     = mwIdeal_all,
-    mrIdeal     = mrIdeal_all,
+    vw          = vw,
+    vr          = vr,
+    vwIdeal     = vwIdeal,
+    vrIdeal     = vrIdeal,
     sM          = sM,
-    bMinPhase   = bMinPhase, 
-    # optional:
-    # vOmegaW=vOmegaW,
-    # vOmegaR=vOmegaR,
+    bMinPhase   = bMinPhase,
     )
         
-    fStg.writeCaseMarkdown("TestBatches", caseDirName, dictCase)
-    
-
-
-
-
-
+    fStg.writeCaseMarkdown("TestBatches", caseDirName, dictCase)    
 
 # Proof plot after patch idea
 vX           = np.fft.fft(vx, sN)
