@@ -2,7 +2,7 @@ import numpy as np
 import scipy.linalg as scLinAlg
 import obq, globalTools
 
-def iterBlockQ_OA(vx, vw, sM, sType):
+def iterBlockQ_OA(vx, vw, sM, sType, bSilent = False):
     """
     OA-OBBQ: Overlap-Add Block-Based One-Bit Quantization
     For linear-phase FIR filters only. Do NOT use for minimum-phase filters
@@ -38,7 +38,7 @@ def iterBlockQ_OA(vx, vw, sM, sType):
     else:
         # Linear-phase FIR assumed: dominant block at k* = ⌊(L-1)/(2M)⌋
         sNu = (swLen - 1) // (2 * sM)
-
+        
         # Build extended filter matrix W_ext  →  shape: ((ν+1)*sM  ×  sM)
         mW_ext = np.vstack([
             np.tril(scLinAlg.toeplitz(vwFull[0:sM]))
@@ -50,11 +50,9 @@ def iterBlockQ_OA(vx, vw, sM, sType):
         ])
 
         for m in range(sNumBlocks):
-            if m == 0:
-                progressBlock = globalTools.SimpleProgressBar(
-                    sNumBlocks, width=40,
-                    prefix="BlockOptimization (OA-OBBQ)",
-                    fill="█", empty=" ", end=" ✓")
+            if (m == 0) & (bSilent == False):
+                progressBlock = globalTools.SimpleProgressBar(sNumBlocks, width=40, prefix = "BlockOptimization (ISCAS25)", fill="█", empty=" ", end=" ✓")
+                            
 
             # Build extended accumulated error vector  →  length: (ν+1)*sM
             # vCe_ext[j*sM:(j+1)*sM]  =  ĉ_e^(p+j)_past
@@ -80,7 +78,7 @@ def iterBlockQ_OA(vx, vw, sM, sType):
             vBlockIdx[m, 1] = sEndIdx
 
             if sType == 'grb':
-                vbBlock, veBlock, outTxt = obq.OptBlock_OA(
+                vbBlock, veBlock, outTxt = obq.OptBlock(
                     vx[m*sM : m*sM + sM], mW_ext, vCe_ext)
             else:
                 vbBlock, veBlock = obq.combOptBlock(
@@ -95,6 +93,7 @@ def iterBlockQ_OA(vx, vw, sM, sType):
             else:
                 veL2Block[m] = np.sum(veBlock[:sM]**2)
 
-            progressBlock.update(m + 1, outTxt)
+            if (bSilent == False):
+                progressBlock.update(m+1, outTxt)
 
     return vb, veL2Block, vBlockIdx

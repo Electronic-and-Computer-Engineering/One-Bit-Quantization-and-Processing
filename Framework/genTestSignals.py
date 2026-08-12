@@ -17,11 +17,11 @@ import os
 import sg, sa, filt, fStg
 
 vCases = [
-    {"strSig":"real","vAmp":None,"vPhase":None,"bUseCos":True,"sBatchSize":2000,"sN":2048,"sM":32,"sL":213,"sBeta":0.0,"mWD":np.array([[np.pi/180,np.pi/10],[3*np.pi/10,4*np.pi/10]]),
-     "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":80.0,"sDeltaW":np.pi/180,"bMinPhase":False}},
+    {"strSig":"real","vAmp":None,"vPhase":None,"bUseCos":True,"sBatchSize":10,"sN":2048,"sM":32,"sL":213,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+     "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":100.0,"sDeltaW":np.pi/180}},
     
-    {"strSig":"real","vAmp":"ampRnd","vPhase":None,"bUseCos":True,"sBatchSize":100,"sN":2048,"sM":32,"sL":213,"sBeta":0.5,"mWD":np.array([[np.pi/180,np.pi/10],[3*np.pi/10,4*np.pi/10]]),
-     "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":80.0,"sDeltaW":np.pi/180,"bMinPhase":False}}
+    #{"strSig":"real","vAmp":"ampRnd","vPhase":None,"bUseCos":True,"sBatchSize":10,"sN":2048,"sM":32,"sL":213,"sBeta":0.5,"mWD":np.array([[np.pi/180,np.pi/10],[3*np.pi/10,4*np.pi/10]]),
+    # "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":80.0,"sDeltaW":np.pi/180,"bMinPhase":False}}
         ]
 
 os.makedirs("TestBatches", exist_ok=True)
@@ -46,7 +46,6 @@ for dictCase in vCases:
     vAmp         = dictCase["vAmp"]
     vPhase       = dictCase["vPhase"]
     bUseCos      = dictCase["bUseCos"]
-    bMinPhase    = dictKaiser["bMinPhase"]
 
     vK           = sg.getKFromWD(mWD,sN)
 
@@ -60,8 +59,7 @@ for dictCase in vCases:
         sApb=dictKaiser["sApb"],
         sAsb=dictKaiser["sAsb"],
         sDeltaW=dictKaiser["sDeltaW"],   # width
-        sTaps=sL,
-        sMinPhase=bMinPhase
+        sTaps=sL
     )
 
     (vr, vOmegaR, vHrespR, sRpbR, sRsbR, sHpbMinR, sHpbMaxR, sHsbMaxR) = filt.fir_calcMBKaiser(
@@ -69,8 +67,7 @@ for dictCase in vCases:
         sApb=dictKaiser["sApb"],
         sAsb=dictKaiser["sAsb"],
         sDeltaW=dictKaiser["sDeltaW"],   # width
-        sTaps=sL,
-        sMinPhase=bMinPhase
+        sTaps=sL
     )
 
     # ideal FFT mask
@@ -95,8 +92,7 @@ for dictCase in vCases:
     vr          = vr,
     vwIdeal     = vwIdeal,
     vrIdeal     = vrIdeal,
-    sM          = sM,
-    bMinPhase   = bMinPhase,
+    sM          = sM
     )
         
     fStg.writeCaseMarkdown("TestBatches", caseDirName, dictCase)    

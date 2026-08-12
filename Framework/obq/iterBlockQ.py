@@ -3,7 +3,7 @@ import numpy as np
 import scipy.linalg as scLinAlg
 import obq, globalTools
 
-def iterBlockQ(vx, vw, sM, sType):
+def iterBlockQ(vx, vw, sM, sType, bSilent = False):
     """
     Args:
         vx:     Input vector.
@@ -36,11 +36,12 @@ def iterBlockQ(vx, vw, sM, sType):
         print("vx should be a multiple of sM")
     else:
         mW_0 = np.tril(scLinAlg.toeplitz(vwFull[0:sM]))
+        
         for m in range(sNumBlocks):
-            if m == 0:
+            if (m == 0) & (bSilent == False):
                 progressBlock = globalTools.SimpleProgressBar(sNumBlocks, width=40, prefix = "BlockOptimization (ISCAS25)", fill="█", empty=" ", end=" ✓")
                             
-            vCe = vC.copy()     #Initialize ve_hat before we actually proceed with the error calculation
+            vCe = vC.copy()
             sStIdx = m * sM
             sEndIdx = sStIdx + sM
             vBlockIdx[m,0] = sStIdx
@@ -63,9 +64,8 @@ def iterBlockQ(vx, vw, sM, sType):
                 veL2Block[m] = veL2Block[m-1] + np.sum(veBlock**2)
             else:
                 veL2Block[m] = np.sum(veBlock**2)
-            
-            progressBlock.update(m+1, outTxt)
-            
-            #print("BlockNumber: %d, ErrVal: %3.5f" % (m, veL2Block[m]))  
+                
+            if (bSilent == False):
+                progressBlock.update(m+1, outTxt)
         
     return vb, veL2Block, vBlockIdx

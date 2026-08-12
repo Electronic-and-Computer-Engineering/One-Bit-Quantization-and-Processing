@@ -144,10 +144,6 @@ def fir_calcMBKaiser(mWD, sApb, sAsb, sDeltaW,
     # --- design FIR
     vHFilt = sigP.firwin2(numtaps=sFiltordK, freq=vFreq, gain=vGain, window=vWindow)
 
-    # --- optional minimum phase
-    if sMinPhase:
-        vHFilt = sigP.minimum_phase(vHFilt, method='homomorphic')
-
     # --- analysis (if your anFiltKaiser expects only LP/HP/BP, this is approximate)
     # Here we call it as "multiband" and pass the zones; you can adapt anFiltKaiser accordingly.
     
