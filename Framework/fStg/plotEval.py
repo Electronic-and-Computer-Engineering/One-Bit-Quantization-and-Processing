@@ -188,7 +188,7 @@ class EvalWindow(QMainWindow):
 # =============================================================================
 # ENTRY POINT
 # =============================================================================
-def plotEval(mx, dictMb, dictRes, vw, sCaseFile, sYLim=(-100, 5)):
+def plotEval(mx, dictMb, dictRes, vw, sCaseFile, sYLim=(-100, 20)):
     """Open the evaluation window. Blocks until it is closed."""
     app = QApplication.instance() or QApplication([])
     win = EvalWindow(mx, dictMb, dictRes, vw, sCaseFile, sYLim)

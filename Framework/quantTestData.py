@@ -13,7 +13,7 @@ sInDir  = "TestBatches"
 sOutDir = "QuantBatches"
 
 vCaseFiles = [
-    "REAL_FIXED_ONBIN_20260811_144745_922683",     # file names without .npz
+    "REAL_FIXED_ONBIN_20260817_181320_775506",     # file names without .npz
 ]
 
 vMethods = ["SDQ","OBBQ","OBBQ_lin"]              # ["SDQ", "OBAQ", "oPWM"]
@@ -57,11 +57,11 @@ for sCaseFile in vCaseFiles:
                     vb, _, _ = obq.iterSequQ(vx, mSigDeltaFilt, 0)
 
             elif strMethod == "OBBQ":
-                    vb, _, _ = obq.iterBlockQ(vx, vwMin, sM, 'grb', bSilent = True)
+                    vb, _, _ = obq.iterBlockQ_OA(vx, vwMin, 64, sPhase = 'min', sType = 'grb', bSilent = True)
                     
             elif strMethod == "OBBQ_lin":
-                    vb, _, _ = obq.iterBlockQ_OA(vx, vw, sM, 'grb', bSilent = True)
-
+                    vb, _, _ = obq.iterBlockQ_OA(vx, vw, 64, sPhase = 'lin', sK = None, sType = 'grb', bSilent = True)
+                   
             else:
                 raise ValueError(f"Unknown quantization method: '{strMethod}'")
 

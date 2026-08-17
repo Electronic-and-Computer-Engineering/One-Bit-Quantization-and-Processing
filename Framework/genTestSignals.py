@@ -17,7 +17,7 @@ import os
 import sg, sa, filt, fStg
 
 vCases = [
-    {"strSig":"real","vAmp":None,"vPhase":None,"bUseCos":True,"sBatchSize":10,"sN":2048,"sM":32,"sL":213,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    {"strSig":"real","vAmp":None,"vPhase":None,"bUseCos":True,"sBatchSize":10,"sN":2048,"sM":32,"sL":117,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
      "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":100.0,"sDeltaW":np.pi/180}},
     
     #{"strSig":"real","vAmp":"ampRnd","vPhase":None,"bUseCos":True,"sBatchSize":10,"sN":2048,"sM":32,"sL":213,"sBeta":0.5,"mWD":np.array([[np.pi/180,np.pi/10],[3*np.pi/10,4*np.pi/10]]),
