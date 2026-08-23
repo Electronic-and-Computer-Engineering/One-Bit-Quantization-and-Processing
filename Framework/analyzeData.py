@@ -13,7 +13,7 @@ sQuantDir = "QuantBatches"
 sEvalDir  = "EvalBatches"
 
 vCaseFiles = [
-    "REAL_FIXED_ONBIN_20260811_144745_922683",     # file names without .npz
+    "REAL_FIXED_ONBIN_20260822_214241_508523", #"REAL_FIXED_ONBIN_20260817_181320_775506",     # file names without .npz
 ]
 
 bPlot = True                       # False -> compute and save only

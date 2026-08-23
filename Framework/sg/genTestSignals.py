@@ -17,8 +17,8 @@ import os
 import sg, sa, filt, fStg
 
 vCases = [
-    {"strSig":"real","mWX":np.array([[0,np.pi/13]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":2,"strKMode":"lin","bReplace":False,"sBatchSize":10,"sN":2048,"sM":32,"sL":77,"sBeta":0.0,"mWD":np.array([[0,np.pi/9]]),
-     "mR":np.array([[0.0,np.pi/9]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":120,"sDeltaW":np.pi/180}},
+    {"strSig":"real","vAmp":None,"vPhase":None,"bUseCos":True,"sBatchSize":10,"sN":2048,"sM":32,"sL":117,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+     "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":100.0,"sDeltaW":np.pi/180}},
     
     #{"strSig":"real","vAmp":"ampRnd","vPhase":None,"bUseCos":True,"sBatchSize":10,"sN":2048,"sM":32,"sL":213,"sBeta":0.5,"mWD":np.array([[np.pi/180,np.pi/10],[3*np.pi/10,4*np.pi/10]]),
     # "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":80.0,"sDeltaW":np.pi/180,"bMinPhase":False}}
@@ -39,19 +39,15 @@ for dictCase in vCases:
     sBeta        = dictCase["sBeta"]
     sBound       = dictCase["sBound"]
     strSig       = dictCase["strSig"]
-    mWX          = dictCase["mWX"]
-    mWD          = dictCase["mWD"]
+    mWD          = dictCase["mWD"]    #provide /omega_{min} and /omega_{max} zones, each row indicates new zone
     mR           = dictCase["mR"]
     sM           = dictCase["sM"]
     dictKaiser   = dictCase["kaiser"]
     vAmp         = dictCase["vAmp"]
     vPhase       = dictCase["vPhase"]
     bUseCos      = dictCase["bUseCos"]
-    sKRatio      = dictCase["sKRatio"]
-    strKMode     = dictCase["strKMode"]
-    bReplace     = dictCase["bReplace"]
 
-    vK           = sg.getKFromWD(mWX, sN)        # signal bins only
+    vK           = sg.getKFromWD(mWD,sN)
 
     mx = np.zeros((sN, sBatchSize), dtype=complex if strSig == "complex" else float)
 
@@ -82,10 +78,8 @@ for dictCase in vCases:
     fnSignal = sg.signalComplex if strSig == "complex" else sg.signalReal
 
     for idxBatch in range(sBatchSize):
-        
-        vKsel   = sg.selectK(vK, sKRatio, strKMode, bReplace)     # Select bins
-        vx, _   = fnSignal(vKsel, sN, sBeta, vAmp, vPhase, bUseCos)          # Create Signal
-        vx      = np.convolve(vr, vx, 'same')                          # Band limit
+
+        vx, _   = fnSignal(vK, sN, sBeta, vAmp, vPhase, bUseCos)          # Create Signal
         vx      = sg.boundRange(vx, sBound)        # Bound the Signal to given range
 
         mx[:,idxBatch] = vx

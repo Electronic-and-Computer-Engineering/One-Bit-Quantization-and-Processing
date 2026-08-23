@@ -4,7 +4,7 @@
 import os
 import numpy as np
 
-import obq, globalTools, filt
+import sg, obq, globalTools, filt
 
 # =============================================================================
 # SETTINGS
@@ -13,10 +13,10 @@ sInDir  = "TestBatches"
 sOutDir = "QuantBatches"
 
 vCaseFiles = [
-    "REAL_FIXED_ONBIN_20260817_181320_775506",     # file names without .npz
+    "REAL_FIXED_ONBIN_20260822_215639_702446", #"REAL_FIXED_ONBIN_20260817_181320_775506",     # file names without .npz
 ]
 
-vMethods = ["SDQ","OBBQ","OBBQ_lin"]              # ["SDQ", "OBAQ", "oPWM"]
+vMethods = ["SDQ","SIGN","OBAQ","OBBQ","OBBQ_lin"]              # ["SDQ", "OBAQ", "oPWM"]
 
 os.makedirs(sOutDir, exist_ok=True)
 
@@ -37,8 +37,11 @@ for sCaseFile in vCaseFiles:
 
     ## Create Filters
     ## ----- Triangular Matrix
-    mSigDeltaFilt = np.tril(np.ones((sN,sN)))
     vwMin,_,dInfo = filt.prunOptimal(vw, sW0Rel=0.1, sMetric='L2', bRequireMinPhase=True)
+    mSigDeltaFilt = np.tril(np.ones((sN,sN)))
+    mSignFilt     = np.identity(sN)
+    mfiltMatrix   = sg.lowerToeplitz(vwMin,sN,bSparse=False)
+
 
     dictQuant = {}
 
@@ -55,13 +58,24 @@ for sCaseFile in vCaseFiles:
             if strMethod == "SDQ":
                 with np.errstate(divide='ignore'):
                     vb, _, _ = obq.iterSequQ(vx, mSigDeltaFilt, 0)
+                    
+            elif strMethod == "SIGN":
+                with np.errstate(divide='ignore'):
+                    vb, _, _ = obq.iterSequQ(vx, mSignFilt, 0) 
+
+            elif strMethod == "OBAQ":
+                with np.errstate(divide='ignore'):
+                    vb, _, _ = obq.iterSequQ(vx, mfiltMatrix, 0)                      
 
             elif strMethod == "OBBQ":
-                    vb, _, _ = obq.iterBlockQ_OA(vx, vwMin, 64, sPhase = 'min', sType = 'grb', bSilent = True)
+                    vb, _, _ = obq.iterBlockQ_OA(vx, vwMin, 32, sPhase = 'min', sType = 'grb', bSilent = True)
                     
             elif strMethod == "OBBQ_lin":
-                    vb, _, _ = obq.iterBlockQ_OA(vx, vw, 64, sPhase = 'lin', sK = None, sType = 'grb', bSilent = True)
-                   
+                    vb, _, _ = obq.iterBlockQ_OA(vx, vw, 32, sPhase = 'lin', sK = None, sType = 'grb', bSilent = True)
+            
+            elif strMethod == "OBBQ_tabu":
+                    vb, _, _ = obq.iterBlockQ_OA(vx, vwMin, 16, sPhase = 'min', sK = None, sType = 'tabu', bSilent = True)
+                     
             else:
                 raise ValueError(f"Unknown quantization method: '{strMethod}'")
 

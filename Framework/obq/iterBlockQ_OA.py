@@ -96,7 +96,7 @@ def iterBlockQ_OA(vx, vw, sM, sPhase = 'lin', sK = None, sType = 'grb', bSilent 
                 vx[m*sM : m*sM + sM], mW_ext, vCe_ext)
         elif sType == 'tabu':
             vbBlock, veBlock, outTxt = obq.OptBlockTabu(vx[m*sM : m*sM + sM], mW_ext, vCe_ext, 
-                                                        sNumReads=10, sTimeout=2)  
+                                                        sNumReads=200, sTimeout=10)  
         else:
             vbBlock, veBlock = obq.combOptBlock(vx[m*sM : m*sM + sM], mW_ext, vCe_ext)
             outTxt = ""

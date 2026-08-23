@@ -5,7 +5,7 @@ def signalReal(vK, sN, sBeta=0.0, vAmp=None, vPhase=None, bUseCos=True):
     Real multi-tone digital test signal (rad/sample).
 
     vK              -> bins used Vekor resulting in ω_k = (2π/sN) * (vK + sBeta),  with 0 <= ω_k <= π
-    sBeta          -> off-bin indicator (global fractional-bin offset) sBeta = 0 [onBin] sBeta != 0 [offBin] 
+    sBeta           -> off-bin indicator (global fractional-bin offset) sBeta = 0 [onBin] sBeta != 0 [offBin] 
     sN              -> number of samples
     vAmp            -> Alternating amplitude factors, vAmp=None (all amps are 1)
     vPhase          -> Alternating phase factors, vPhase=None (φ_k ~ U[0, 2π)) 
