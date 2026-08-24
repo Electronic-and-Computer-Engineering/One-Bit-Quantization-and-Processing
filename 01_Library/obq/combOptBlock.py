@@ -1,5 +1,5 @@
 import numpy as np
-import sg,misc
+import sg
 
 def combOptBlock(vx, mW, vE_hat):
 

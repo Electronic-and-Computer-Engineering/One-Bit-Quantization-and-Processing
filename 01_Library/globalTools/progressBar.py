@@ -1,6 +1,5 @@
 import sys
 
-
 class SimpleProgressBar:
     def __init__(self, total, width=40, prefix="Progress",
                  fill="█", faded="▒", empty=" ", end="✓ Done"):

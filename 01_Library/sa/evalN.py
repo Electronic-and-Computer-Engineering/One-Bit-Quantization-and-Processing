@@ -18,21 +18,19 @@ def evalN(vError, vRef):
         Florian Mayer <florian.mayer@fh-joanneum.at>
 
     """
-    vError += math.ulp(1.00)
-    vRef += math.ulp(1.00)
+    # no in-place modification of the caller's arrays
+    vError = np.asarray(vError) + math.ulp(1.00)
+    vRef   = np.asarray(vRef)   + math.ulp(1.00)
 
     # Mean-Squared Error
-    #sMSE = np.sum((vError) ** 2) / np.size(vRef)
-    #varRef = np.sum(np.abs(vRef) ** 2) / np.size(vRef)
-    #varError = np.sum(np.abs(vError) ** 2) / np.size(vError)
-    sMSE = np.sum((vError) ** 2)
-    varRef = np.sum(np.abs(vRef) ** 2)
+    sMSE     = np.sum(np.abs(vError) ** 2) / np.size(vError)
+    varRef   = np.sum(np.abs(vRef)   ** 2)
     varError = np.sum(np.abs(vError) ** 2)
 
     # Signal-to-Noise Ratio in dB
     sSERdB = 10 * np.log10(varRef / varError)
 
     # Peak Signal-to-Noise Ratio in dB
-    sPSERdB = 10 * np.log10(np.max(vRef) ** 2 / sMSE)
+    sPSERdB = 10 * np.log10(np.max(np.abs(vRef)) ** 2 / sMSE)
 
     return sMSE, sSERdB, sPSERdB

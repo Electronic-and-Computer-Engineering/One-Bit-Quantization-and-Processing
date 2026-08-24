@@ -1,49 +1,86 @@
 import numpy as np
 
-def idealBinFilt(sN, mW, sValPass=1.0, sValStop=0.0, bFull=True):
+def idealBinFiltFromMW(sN, mW, sValPass=1.0, sValStop=0.0, bFull=True):
     """
-    mW : (M,4) array_like
-        Per band: [wStop1, wPass1, wPass2, wStop2] in rad/sample.
-        Linear ramp from sValStop to sValPass between wStop1 and wPass1.
-        Flat sValPass between wPass1 and wPass2.
-        Linear ramp from sValPass to sValStop between wPass2 and wStop2.
+    Create an ideal (brick-wall) multiband frequency mask from passband zones mW (omega in [0, pi])
+    and return the corresponding time-domain FIR via IFFT.
+
+    Parameters
+    ----------
+    sN : int
+        IFFT length / desired FIR length.
+    mW : (M,2) array_like
+        Passband zones in omega (rad/sample), 0 <= omega <= pi.
+        Each row: [wMin, wMax]. Union of all rows defines passband set.
+    sValPass : float
+        Mask value inside passbands (default 1.0).
+    sValStop : float
+        Mask value outside passbands (default 0.0).
+    bFull : bool
+        If True: enforce conjugate symmetry by mirroring the positive-frequency mask
+        to the negative-frequency bins -> real impulse response.
+        If False: only fills [0..N/2] and leaves the rest as stop.
+
+    Returns
+    -------
+    vH : (sN,) ndarray
+        FIR coefficients (real).
+    vHShift : (sN,) ndarray
+        Shifted FIR coefficients (ifftshift), useful for centered linear-phase view.
+    vMask : (sN,) ndarray
+        Frequency-domain mask (complex-valued array, but real entries).
     """
+
     sN = int(sN)
+    if sN <= 0:
+        raise ValueError("sN must be positive")
+
     mW = np.asarray(mW, dtype=float)
     if mW.ndim == 1:
-        mW = mW.reshape(1, 4)
-    
+        if mW.size != 2:
+            raise ValueError("If mW is 1D, it must be [wMin, wMax]")
+        mW = mW.reshape(1, 2)
+
+    if mW.ndim != 2 or mW.shape[1] != 2:
+        raise ValueError("mW must be of shape (M,2)")
+
+    if np.any(mW < 0) or np.any(mW > np.pi):
+        raise ValueError("mW must satisfy 0 <= omega <= pi")
+
+    if np.any(mW[:, 0] > mW[:, 1]):
+        raise ValueError("each row of mW must satisfy wMin <= wMax")
+
+    # initialize mask
     vMask = np.full(sN, float(sValStop), dtype=float)
-    
-    for wStop1, wPass1, wPass2, wStop2 in mW:
-        kStop1 = int(np.ceil((wStop1 / (2*np.pi)) * sN))
-        kPass1 = int(np.floor((wPass1 / (2*np.pi)) * sN))
-        kPass2 = int(np.floor((wPass2 / (2*np.pi)) * sN))
-        kStop2 = int(np.floor((wStop2 / (2*np.pi)) * sN))
 
-        kStop1 = max(0, min(kStop1, sN//2))
-        kPass1 = max(0, min(kPass1, sN//2))
-        kPass2 = max(0, min(kPass2, sN//2))
-        kStop2 = max(0, min(kStop2, sN//2))
+    # map omega -> bins on the positive-frequency half [0..N/2]
+    # k = round( (omega / (2*pi)) * N )
+    for wMin, wMax in mW:
+        kMin = int(np.ceil((wMin / (2.0 * np.pi)) * sN))
+        kMax = int(np.floor((wMax / (2.0 * np.pi)) * sN))
 
-        # Rising ramp: wStop1 -> wPass1
-        if kPass1 > kStop1:
-            vMask[kStop1:kPass1] = np.linspace(sValStop, sValPass, kPass1-kStop1)
+        # clip to valid positive-frequency indices
+        kMin = max(0, min(kMin, sN // 2))
+        kMax = max(0, min(kMax, sN // 2))
 
-        # Flat passband: wPass1 -> wPass2
-        if kPass2 >= kPass1:
-            vMask[kPass1:kPass2+1] = sValPass
-
-        # Falling ramp: wPass2 -> wStop2
-        if kStop2 > kPass2:
-            vMask[kPass2:kStop2] = np.linspace(sValPass, sValStop, kStop2-kPass2)
+        if kMax >= kMin:
+            vMask[kMin:kMax + 1] = float(sValPass)
 
     if bFull:
+        # enforce real impulse response by conjugate-symmetric magnitude mask:
+        # mirror bins 1..N/2-1 to N-1..N/2+1
+        # (keep DC=0 and Nyquist=N/2 untouched)
         if sN % 2 == 0:
-            vMask[sN//2+1:] = vMask[1:sN//2][::-1]
+            # even N: Nyquist bin exists at N/2
+            vMask[sN//2 + 1:] = vMask[1:sN//2][::-1]
         else:
+            # odd N: no exact Nyquist bin
             vMask[(sN+1)//2:] = vMask[1:(sN+1)//2][::-1]
 
-    vH      = np.fft.ifft(vMask).real
+    # IFFT -> impulse response
+    vH = np.fft.ifft(vMask).real
+
+    # centered view (linear-phase FIR typically plotted centered)
     vHShift = np.fft.ifftshift(vH)
+
     return vH, vHShift, vMask
