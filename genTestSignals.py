@@ -18,13 +18,103 @@ sys.path.append('01_Library')
 # We would add more if neccessary
 import sg, sa, filt, fStg
 
-vCases = [
-    {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":10,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+vCases = [    
+    # =====================================================================
+    #  Baseline
+    # =====================================================================
+    {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":2,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
      "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/16}},
-    
-    #{"strSig":"real","vAmp":"ampRnd","vPhase":None,"bUseCos":True,"sBatchSize":10,"sN":2048,"sM":32,"sL":213,"sBeta":0.5,"mWD":np.array([[np.pi/180,np.pi/10],[3*np.pi/10,4*np.pi/10]]),
-    # "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":80.0,"sDeltaW":np.pi/180,"bMinPhase":False}}
-        ]
+ 
+    # # =====================================================================
+    # #  A) Block size at fixed filter  ->  validate sK = nLo + sM over sM
+    # # =====================================================================
+    # {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":8,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/16}},
+ 
+    # {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":16,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/16}},
+ 
+    # {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":64,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/16}},
+ 
+    # # =====================================================================
+    # #  B) Filter length at fixed sM = 32  ->  does nLo track sL?
+    # # =====================================================================
+    # {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":127,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/24}},
+ 
+    # {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":213,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/40}},
+ 
+    # {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":4096,"sM":32,"sL":341,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/64}},
+ 
+    # # =====================================================================
+    # #  C) Band position and width  ->  main lobe width changes nLo
+    # # =====================================================================
+    # {"strSig":"real","mWX":np.array([[0,np.pi/4]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/4]]),
+    #  "mR":np.array([[0.0,np.pi/4]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/16}},
+ 
+    # {"strSig":"real","mWX":np.array([[0,np.pi/32]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/32]]),
+    #  "mR":np.array([[0.0,np.pi/32]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/16}},
+ 
+    # {"strSig":"real","mWX":np.array([[np.pi/8,np.pi/4]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[np.pi/8,np.pi/4]]),
+    #  "mR":np.array([[np.pi/8,np.pi/4]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/16}},
+ 
+    # # =====================================================================
+    # #  D) Stopband attenuation  ->  decay behaviour, hence nLo
+    # # =====================================================================
+    # {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":40,"sDeltaW":np.pi/16}},
+ 
+    # {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":120,"sDeltaW":np.pi/16}},
+ 
+    # # =====================================================================
+    # #  E) Signal band narrower / wider than the shaping band
+    # # =====================================================================
+    # {"strSig":"real","mWX":np.array([[0,np.pi/40]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/16}},
+ 
+    # {"strSig":"real","mWX":np.array([[0,np.pi/6]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/16}},
+ 
+    # {"strSig":"real","mWX":np.array([[np.pi/12,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/16}},
+ 
+    # # =====================================================================
+    # #  F) Multiband shaping  ->  impulse response no longer unimodal,
+    # #     the nutzen/preis crossing may occur more than once
+    # # =====================================================================
+    # {"strSig":"real","mWX":np.array([[0,np.pi/16],[np.pi/4,np.pi/3]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":127,"sBeta":0.0,"mWD":np.array([[0,np.pi/16],[np.pi/4,np.pi/3]]),
+    #  "mR":np.array([[0.0,np.pi/16],[np.pi/4,np.pi/3]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/24}},
+ 
+    # {"strSig":"real","mWX":np.array([[0,np.pi/16]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":127,"sBeta":0.0,"mWD":np.array([[0,np.pi/16],[np.pi/4,np.pi/3]]),
+    #  "mR":np.array([[0.0,np.pi/16]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/24}},
+ 
+    # # =====================================================================
+    # #  G) Reconstruction filter != shaping filter.  The cost function that
+    # #     is minimised is ||W(x-b)||^2 but the metric is ||R(x-b)||^2 --
+    # #     these coincide only for mR == mWD.
+    # # =====================================================================
+    # {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/8]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/16}},
+ 
+    # {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/14]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/16}},
+ 
+    # # =====================================================================
+    # #  H) Transition width, drive level, phase
+    # # =====================================================================
+    # {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/6}},
+ 
+    # {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/10]]),"sBound":0.5,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/16}},
+ 
+    # {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":False,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":100,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
+    #  "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/16}},
+]
 
 os.makedirs("TestBatches", exist_ok=True)
 

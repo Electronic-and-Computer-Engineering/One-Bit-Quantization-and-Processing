@@ -15,7 +15,7 @@ sInDir  = "TestBatches"
 sOutDir = "QuantBatches"
 
 vCaseFiles = [
-    "REAL_FIXED_ONBIN_20260824_100242_594490", #"REAL_FIXED_ONBIN_20260817_181320_775506",     # file names without .npz
+    "REAL_FIXED_ONBIN_20260824_133437_307778", #"REAL_FIXED_ONBIN_20260817_181320_775506",     # file names without .npz
 ]
 
 vMethods = ["SDQ","SIGN","OBAQ","OBBQ","OBBQ_lin"]              # ["SDQ", "OBAQ", "oPWM"]

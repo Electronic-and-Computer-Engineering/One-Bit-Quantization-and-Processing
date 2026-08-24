@@ -2,8 +2,9 @@ import numpy as np
 
 from PyQt5.QtCore    import Qt
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QTabWidget, QWidget,
-                             QVBoxLayout)
+                             QVBoxLayout, QLabel)
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavToolbar
 from matplotlib.figure import Figure
 
 import sa
@@ -14,7 +15,13 @@ vXLabels = ([r'$0$'] +
             [rf'$\frac{{{k}\pi}}{{10}}$' for k in range(1, 10)] +
             [r'$\pi$'])
 
-dictBox = dict(boxstyle='round', facecolor='lightyellow', alpha=0.75)
+dictBox = dict(boxstyle='round', facecolor='lightyellow',
+               edgecolor='black', linewidth=1.2, alpha=0.95)
+
+# --- publication style: no titles, label boxes inside the axes
+sFsTick  = 15
+sFsLabel = 17
+sFsBox   = 16
 
 
 def magDb(vSig, sN, sNorm):
@@ -77,7 +84,13 @@ def figOverview(dictRes, sCaseFile):
 # METHOD TAB
 # =============================================================================
 class MethodTab(QWidget):
-    """Signal and noise spectrum of one method, one realization at a time."""
+    """Signal and noise spectrum of one method, one realization at a time.
+
+    The figure carries no titles -- the panel labels sit inside the axes, so
+    the figure can be saved straight from the toolbar and used as is. The
+    realization counter lives in a QLabel below the canvas and therefore does
+    not end up in the saved file.
+    """
 
     def __init__(self, strMethod, mx, mb, dictRes, vw, sYLim):
         super().__init__()
@@ -95,17 +108,24 @@ class MethodTab(QWidget):
 
         self.vOmega = np.linspace(0, np.pi, self.sN // 2, endpoint=False)
 
-        self.fig    = Figure(figsize=(9, 6))
+        self.fig    = Figure(figsize=(9, 7))
         self.vAx    = self.fig.subplots(2, 1)
         self.canvas = FigureCanvas(self.fig)
+        self.canvas.setFocusPolicy(Qt.NoFocus)       # keys go to the window
+        self.status = QLabel()                       # outside the figure
 
         lay = QVBoxLayout(self)
+        lay.addWidget(NavToolbar(self.canvas, self))  # save / zoom / pan
         lay.addWidget(self.canvas)
+        lay.addWidget(self.status)
 
         self.plot()
 
     def step(self, sStep):
-        self.idx = int(np.clip(self.idx + sStep, 0, self.sBatchSize - 1))
+        self.goTo(self.idx + sStep)
+
+    def goTo(self, sIdx):
+        self.idx = int(np.clip(sIdx, 0, self.sBatchSize - 1))
         self.plot()
 
     def plot(self):
@@ -120,32 +140,41 @@ class MethodTab(QWidget):
         for ax in self.vAx:
             ax.clear()
 
-        strSer = (f"SER ideal: {sSerIdeal:.2f} dB     "
-                  f"SER non-ideal: {sSerReal:.2f} dB")
-
-        # --- signal spectrum
+        # --- a) signal spectrum
         self.vAx[0].plot(self.vOmega, magDb(vb, self.sN, sNorm),
                          color='black', linewidth=1.0)
-        self.vAx[0].set_title(f"a) signal spectrum -- {strSer}", fontsize=12)
 
-        # --- noise spectrum plus shaping filter
+        # --- b) noise spectrum plus shaping filter
         self.vAx[1].plot(self.vOmega, magDb(vx - vb, self.sN, sNorm),
                          color='black', linewidth=1.0)
         self.vAx[1].plot(self.vOmega, self.vWdB,
-                         color='cornflowerblue', linestyle='--', linewidth=2.0)
-        self.vAx[1].set_title(f"b) noise spectrum -- {strSer}", fontsize=12)
-        self.vAx[1].set_xlabel('Normalized Frequency (radians/sample)', fontsize=12)
+                         color='cornflowerblue', linestyle='--', linewidth=3.0)
 
-        for ax in self.vAx:
-            ax.set_ylabel('Magnitude (dB)', fontsize=12)
+        self.vAx[1].set_xlabel('Normalized Frequency (radians/sample)',
+                               fontsize=sFsLabel)
+
+        # --- panel labels inside the axes, lower right
+        for ax, strPanel, sSer in ((self.vAx[0], 'a', sSerIdeal),
+                                   (self.vAx[1], 'b', sSerReal)):
+            ax.text(0.98, 0.05,
+                    f"{strPanel}) {self.strMethod}, SER: {sSer:.2f} dB",
+                    transform=ax.transAxes, ha='right', va='bottom',
+                    fontsize=sFsBox, bbox=dictBox)
+
+            ax.set_ylabel('Magnitude (dB)', fontsize=sFsLabel)
             ax.set_xlim([0, np.pi])
             ax.set_ylim(self.sYLim)
             ax.set_xticks(vXTicks)
-            ax.set_xticklabels(vXLabels, fontsize=12)
+            ax.set_xticklabels(vXLabels, fontsize=sFsTick)
+            ax.tick_params(axis='y', labelsize=sFsTick)
             ax.minorticks_on()
-            ax.grid(True, which='both', linestyle='--', linewidth=0.3, color='gray')
+            ax.grid(True, which='both', linestyle='--', linewidth=0.3,
+                    color='gray')
 
-        self.fig.suptitle(f"realization {self.idx + 1} / {self.sBatchSize}")
+        self.status.setText(
+            f"realization {self.idx + 1} / {self.sBatchSize}     "
+            f"SER ideal {sSerIdeal:.2f} dB     non-ideal {sSerReal:.2f} dB")
+
         self.fig.tight_layout()
         self.canvas.draw()
 
@@ -154,7 +183,21 @@ class MethodTab(QWidget):
 # WINDOW
 # =============================================================================
 class EvalWindow(QMainWindow):
-    """Tab container. Arrow keys = +-1 realization, ',' / '.' = -+10."""
+    """Tab container.
+
+    Navigation through the realizations, identical on Windows and macOS:
+
+        right / down    +1        left / up      -1
+        .               +10       ,              -10
+        end             last      home           first
+
+    Arrow keys and the two punctuation keys are plain Qt key codes, so they
+    need no modifier on either platform. Home and End require fn + arrow on
+    Mac laptops, hence they are the secondary binding, not the primary one.
+    """
+
+    strKeys = ("navigation:   \u2190 \u2192 \u2191 \u2193  =  \u00b11        "
+               ",  .  =  \u00b110        home / end  =  first / last")
 
     def __init__(self, mx, dictMb, dictRes, vw, sCaseFile, sYLim):
         super().__init__()
@@ -164,7 +207,10 @@ class EvalWindow(QMainWindow):
 
         tabOv = QWidget()
         layOv = QVBoxLayout(tabOv)
-        layOv.addWidget(FigureCanvas(figOverview(dictRes, sCaseFile)))
+        canOv = FigureCanvas(figOverview(dictRes, sCaseFile))
+        canOv.setFocusPolicy(Qt.NoFocus)
+        layOv.addWidget(NavToolbar(canOv, tabOv))
+        layOv.addWidget(canOv)
         self.tabs.addTab(tabOv, "Overview")
 
         self.vTabs = []
@@ -174,7 +220,16 @@ class EvalWindow(QMainWindow):
             self.tabs.addTab(tab, strMethod)
 
         self.setCentralWidget(self.tabs)
-        self.resize(1000, 800)
+
+        # QTabWidget consumes left/right to switch tabs -- take the focus away
+        # from it and from the tab bar so every key reaches keyPressEvent.
+        self.tabs.setFocusPolicy(Qt.NoFocus)
+        self.tabs.tabBar().setFocusPolicy(Qt.NoFocus)
+        self.setFocusPolicy(Qt.StrongFocus)
+        self.setFocus()
+
+        self.statusBar().showMessage(self.strKeys)
+        self.resize(1000, 900)
 
     def keyPressEvent(self, event):
         dictStep = {Qt.Key_Right: +1, Qt.Key_Up:    +1,
@@ -183,12 +238,15 @@ class EvalWindow(QMainWindow):
         if event.key() in dictStep:
             for tab in self.vTabs:
                 tab.step(dictStep[event.key()])
+        elif event.key() in (Qt.Key_Home, Qt.Key_End):
+            for tab in self.vTabs:
+                tab.goTo(0 if event.key() == Qt.Key_Home else tab.sBatchSize - 1)
 
 
 # =============================================================================
 # ENTRY POINT
 # =============================================================================
-def plotEval(mx, dictMb, dictRes, vw, sCaseFile, sYLim=(-100, 20)):
+def plotEval(mx, dictMb, dictRes, vw, sCaseFile, sYLim=(-60, 5)):
     """Open the evaluation window. Blocks until it is closed."""
     app = QApplication.instance() or QApplication([])
     win = EvalWindow(mx, dictMb, dictRes, vw, sCaseFile, sYLim)
