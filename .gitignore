@@ -1,0 +1,63 @@
+# ---------------------------------------------------------------------------
+#  One-Bit Quantization and Processing
+# ---------------------------------------------------------------------------
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Numba AOT / dispatcher caches (OptBlockSphere)
+*.nbi
+*.nbc
+
+# --- Virtual environments --------------------------------------------------
+.venv/
+venv/
+env/
+.conda/
+
+# --- IDE / editor ----------------------------------------------------------
+.spyproject/
+.spyderproject
+.spyderworkspace
+.idea/
+.vscode/
+*.swp
+*~
+
+# --- OS --------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Secrets ---------------------------------------------------------------
+# mailtools liest das App-Passwort aus der Umgebung, nicht aus dem Code.
+.env
+.env.*
+*.secret
+credentials.json
+
+# --- Abgeleitete Daten -----------------------------------------------------
+# Reproduzierbar aus den Case-Configs + Seed. Gehoeren in ein Release-Asset
+# oder zu Zenodo, nicht in jeden Clone.
+TestBatches/
+QuantBatches/
+EvalBatches/
+
+# Die Case-Metadaten (Dublin Core) sind klein und dokumentieren den Lauf --
+# die bleiben drin:
+!TestBatches/*.md
+!EvalBatches/*.md
+!EvalBatches/*.csv
+
+# --- Sonstige Ausgaben -----------------------------------------------------
+*.log
+figures/
+out/
