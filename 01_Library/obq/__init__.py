@@ -5,5 +5,7 @@ from .iterBlockQ_OA_red  import iterBlockQ_OA_red
 from .OptBlock           import OptBlock
 from .OptBlock_gram      import OptBlock_gram
 from .combOptBlock       import combOptBlock
+from .combOptBlock_dec   import combOptBlock_dec
 from .OptBlockTabu       import OptBlockTabu
- 
+from .swapBits           import swapCloseBits
+from .OptBlockSphere     import OptBlockSphere

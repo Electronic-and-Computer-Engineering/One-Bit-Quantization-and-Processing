@@ -40,8 +40,7 @@ def OptBlock_gram(vx, mW, vCe):
     #Mixed-Integer Quadratically Constrained Quadratic Programming (MIQP)
     model = gp.Model("MIQP")
     model.setParam("OutputFlag", 0)     # 0 to Suppress Gurobi output
-    model.setParam("MIPGap",1e-3)
-    model.setParam("TimeLimit", 2)
+    model.setParam("TimeLimit", 4)
     model.setParam("VarBranch", 3)
 
     # Decision variables as binary, mapped to {-1, 1} via b = 2u - 1

@@ -15,10 +15,10 @@ sInDir  = "TestBatches"
 sOutDir = "QuantBatches"
 
 vCaseFiles = [
-    "REAL_FIXED_ONBIN_20260824_133437_307778", #"REAL_FIXED_ONBIN_20260817_181320_775506",     # file names without .npz
+    "REAL_FIXED_ONBIN_20260824_124847_679209", #"REAL_FIXED_ONBIN_20260817_181320_775506",     # file names without .npz
 ]
 
-vMethods = ["SDQ","SIGN","OBAQ","OBBQ","OBBQ_lin"]              # ["SDQ", "OBAQ", "oPWM"]
+vMethods = ["SDQ","OBBQ_bf32"]              # ["SDQ", "OBAQ", "oPWM"]
 
 os.makedirs(sOutDir, exist_ok=True)
 
@@ -67,13 +67,25 @@ for sCaseFile in vCaseFiles:
 
             elif strMethod == "OBAQ":
                 with np.errstate(divide='ignore'):
-                    vb, _, _ = obq.iterSequQ(vx, mfiltMatrix, 0)                      
-
-            elif strMethod == "OBBQ":
-                    vb, _, _ = obq.iterBlockQ_OA(vx, vwMin, 32, sPhase = 'min', sType = 'grb', bSilent = True)
+                    vb, _, _ = obq.iterSequQ(vx, mfiltMatrix, 0)      
+            
+            elif strMethod == "OBBQ_bf16":
+                    vb, _, _ = obq.iterBlockQ_OA(vx, vw, 16, sPhase = 'lin', sK = None, sType = None, bSilent = True) 
                     
-            elif strMethod == "OBBQ_lin":
-                    vb, _, _ = obq.iterBlockQ_OA(vx, vw, 32, sPhase = 'lin', sK = None, sType = 'grb', bSilent = True)
+            elif strMethod == "OBBQ_linG16":
+                    vb, _, _ = obq.iterBlockQ_OA(vx, vw, 16, sPhase = 'lin', sK = None, sType = 'grb', bSilent = True)        
+           
+            elif strMethod == "OBBQ_bf32":
+                    vb, _, _ = obq.iterBlockQ_OA(vx, vw, 32, sPhase = 'lin', sK = None, sType = None, bSilent = True) 
+                    
+            elif strMethod == "OBBQ_linG32":
+                    vb, _, _ = obq.iterBlockQ_OA(vx, vw, 32, sPhase = 'lin', sK = None, sType = 'grb', bSilent = True)   
+                    
+            elif strMethod == "OBBQ_bf64":
+                    vb, _, _ = obq.iterBlockQ_OA(vx, vw, 64, sPhase = 'lin', sK = None, sType = None, bSilent = True) 
+                    
+            elif strMethod == "OBBQ_linG64":
+                    vb, _, _ = obq.iterBlockQ_OA(vx, vw, 64, sPhase = 'lin', sK = None, sType = 'grb', bSilent = True)           
             
             elif strMethod == "OBBQ_tabu":
                     vb, _, _ = obq.iterBlockQ_OA(vx, vwMin, 16, sPhase = 'min', sK = None, sType = 'tabu', bSilent = True)
