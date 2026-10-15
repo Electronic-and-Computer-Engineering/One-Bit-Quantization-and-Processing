@@ -151,9 +151,9 @@ def sphereDecode(mWtri, vx, vv, sE0=0.0, vbInit=None):
 
     return _search(mWtri, vx, vv, sE0, vbInit.copy(), sEInit)
 
-def OptBlockSphere(vx, mW, vC_hat, mQ=None, mWtri=None, vbInit=None):
+def OptBlockSphere(vx, mWtri, vv, sEc = 0.0, vbInit = None):
     """
-    Universal exact block solver for any filter matrix mW (K x M, K >= M):
+    Exact block solver for the filter matrix mW (K x M, K >= M):
 
         b̂ = argmin_b || mW (vx - b) + vC_hat ||^2
 
@@ -161,13 +161,14 @@ def OptBlockSphere(vx, mW, vC_hat, mQ=None, mWtri=None, vbInit=None):
 
         E = || W_△ (vx - b) + v ||^2 + E_c,   v = Qᵀ c,   E_c = ||c||^2 - ||v||^2
 
-    For K = M, E_c = 0 automatically; for an already triangular mW, W_△ = mW.
+    The decomposition is done ONCE by the caller (mW is the same for all
+    blocks) and handed in; for K = M it is Q = I, W_△ = mW and E_c = 0.
 
     Input:
         vx:          input signal (length M)
         mW:          filter matrix (K x M)
         vC_hat:      error of previous blocks (length K)
-        mQ, mWtri:   optional precomputed QL decomposition (mW is the same for all blocks)
+        mQ, mWtri:   QL decomposition of mW
         vbInit:      optional start solution in {-1, +1}^M
 
     Returning (same as OptBlock_gram):
@@ -175,13 +176,6 @@ def OptBlockSphere(vx, mW, vC_hat, mQ=None, mWtri=None, vbInit=None):
         ve_hat:      error vector mW (vx - vb_hat) + vC_hat (length K)
         outTxt:      status text
     """
-    if mQ is None or mWtri is None:
-        mQ, mWtri = sa.qlDecomp(mW)                     # W = Q W_△
-
-    vv  = mQ.T @ vC_hat                              # v   = Qᵀ c
-    sEc = vC_hat @ vC_hat - vv @ vv                  # E_c = ||c||² − ||v||²
-
     vb_hat, sE, sNodes = sphereDecode(mWtri, vx, vv, sEc, vbInit)
-
-    ve_hat = mW @ (vx - vb_hat) + vC_hat             # true error vector with the original W
+    ve_hat = mWtri @ (vx - vb_hat) + vv
     return vb_hat, ve_hat, f"E = {sE:.4f}, {sNodes} nodes"

@@ -1,4 +1,2 @@
-from .mailtools  import *
-from .plottools  import *
-from .vecMatcalc import *
+from .plottools   import plotInit, plotAdd, plotDepth, plotClose
 from .progressBar import SimpleProgressBar
