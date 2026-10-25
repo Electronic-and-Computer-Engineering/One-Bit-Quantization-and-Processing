@@ -1,5 +1,5 @@
 import numpy as np
-import sa
+import time
 from numba import njit
 
 # def sphereDecode(mWtri, vx, vv, sE0=0.0, vbInit=None):
@@ -166,16 +166,23 @@ def OptBlockSphere(vx, mWtri, vv, sEc = 0.0, vbInit = None):
 
     Input:
         vx:          input signal (length M)
-        mW:          filter matrix (K x M)
-        vC_hat:      error of previous blocks (length K)
-        mQ, mWtri:   QL decomposition of mW
+        mWtri:       triangular factor W_△ of the QL decomposition (M x M)
+        vv:          rotated error of previous blocks, v = Qᵀ c (length M)
+        sEc:         constant E_c, does not change b̂
         vbInit:      optional start solution in {-1, +1}^M
 
-    Returning (same as OptBlock_gram):
+    Returning (same shape as OptBlock):
         vb_hat:      one-bit vector
-        ve_hat:      error vector mW (vx - vb_hat) + vC_hat (length K)
+        ve_hat:      error vector W_△ (vx - vb_hat) + vv
         outTxt:      status text
+        sTsph:       solve time in seconds, greedy start and tree search,
+                     the error vector excluded. The first call of the process
+                     carries the numba compilation, so warm the solver up once
+                     before any measurement.
     """
+    sT0 = time.perf_counter()
     vb_hat, sE, sNodes = sphereDecode(mWtri, vx, vv, sEc, vbInit)
+    sTsph = time.perf_counter() - sT0
+
     ve_hat = mWtri @ (vx - vb_hat) + vv
-    return vb_hat, ve_hat, f"E = {sE:.4f}, {sNodes} nodes"
+    return vb_hat, ve_hat, f"E = {sE:.4f}, {sNodes} nodes, t = {sTsph:.4f}s", sTsph

@@ -22,8 +22,8 @@ vCases = [
     # =====================================================================
     #  Baseline
     # =====================================================================
-    {"strSig":"real","mWX":np.array([[0,np.pi/10]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":2,"sN":2048,"sM":32,"sL":79,"sBeta":0.0,"mWD":np.array([[0,np.pi/10]]),
-     "mR":np.array([[0.0,np.pi/10]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":90,"sDeltaW":np.pi/16}},
+    {"strSig":"real","mWX":np.array([[0,np.pi/12]]),"vAmp":None,"vPhase":None,"bUseCos":True,"sKRatio":1,"strKMode":"lin","bReplace":False,"sBatchSize":150,"sN":2048,"sM":32,"sL":117,"sBeta":0.0,"mWD":np.array([[0,np.pi/12]]),
+     "mR":np.array([[0.0,np.pi/12]]),"sBound":1.0,"kaiser":{"sApb":1.0,"sAsb":120,"sDeltaW":np.pi/60}},
  
     # # =====================================================================
     # #  A) Block size at fixed filter  ->  validate sK = nLo + sM over sM

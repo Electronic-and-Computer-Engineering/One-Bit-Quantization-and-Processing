@@ -12,6 +12,10 @@ def OptBlock(vx, mW, vCe):
     Returns:
         vb: Quantized one-bit vector
         ve: Error vector
+        outTxt: Status text
+        sTgrb: Gurobi's own solve time in seconds, without the model build
+        bLimit: True if the solver stopped at its time limit, i.e. the returned
+                solution is the incumbent and not the proven optimum
     """
     nVars = mW.shape[1]
     #Mixed-Integer Quadratically Constrained Quadratic Programming (MIQP)
@@ -53,12 +57,16 @@ def OptBlock(vx, mW, vCe):
     model.optimize()
 
     # Output the solution
+    sTgrb  = model.Runtime                          # solve time, model build excluded
+    bLimit = (model.status == GRB.TIME_LIMIT)       # incumbent, not a proven optimum
     if model.status == GRB.OPTIMAL:
-        outTxt = f"Optimal solution found. ({model.SolCount})"
+        outTxt = f"Optimal solution found. ({model.SolCount}), t = {sTgrb:.4f}s"
+    elif bLimit:
+        outTxt = f"Time limit, gap = {model.MIPGap:.2e} ({model.SolCount}), t = {sTgrb:.4f}s"
     else:
-        outTxt = f"No Optimal solution found. ({model.SolCount})"
+        outTxt = f"No Optimal solution found. ({model.SolCount}), t = {sTgrb:.4f}s"
 
     vb_out = np.array([2 * vb[j].X - 1 for j in range(nVars)])  # Extract optimized solution
     ve = mW @ (vx - vb_out) + vCe  # Updated error considering the optimization
     
-    return vb_out, ve, outTxt
+    return vb_out, ve, outTxt, sTgrb, bLimit

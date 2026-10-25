@@ -15,10 +15,10 @@ sInDir  = "TestBatches"
 sOutDir = "QuantBatches"
 
 vCaseFiles = [
-    "REAL_FIXED_ONBIN_20260824_124847_679209", #"REAL_FIXED_ONBIN_20260817_181320_775506",     # file names without .npz
+    "REAL_FIXED_ONBIN_20261018_161100_140495", #"REAL_FIXED_ONBIN_20260817_181320_775506",     # file names without .npz
 ]
 
-vMethods = ["OBBQ_sph128"]              # ["SDQ", "OBAQ", "oPWM"]
+vMethods = ["SDQ","OBBQ_sph32"]              # ["SDQ", "OBAQ", "oPWM"]
 
 os.makedirs(sOutDir, exist_ok=True)
 

@@ -72,7 +72,7 @@ def iterBlockQ(vx, vw, sM, sPhase = 'lin', sK = None, sEps = 0.05,
             sK = sM
         else:
             vPhi = np.cumsum(vw**2) / np.sum(vw**2)
-            sNlo = int(np.searchsorted(vPhi, sEps, side = 'right')) - 1
+            sNlo = int(np.searchsorted(vPhi, sEps, side = 'right'))
             sK   = sNlo + sM
     sK = int(np.clip(sK, sM, swLen + sM - 1))
 

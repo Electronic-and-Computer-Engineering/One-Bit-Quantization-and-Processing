@@ -15,7 +15,7 @@ sQuantDir = "QuantBatches"
 sEvalDir  = "EvalBatches"
 
 vCaseFiles = [
-    "REAL_FIXED_ONBIN_20260824_124847_679209", #"REAL_FIXED_ONBIN_20260817_181320_775506",     # file names without .npz
+    "REAL_FIXED_ONBIN_20261018_161100_140495", #"REAL_FIXED_ONBIN_20260817_181320_775506",     # file names without .npz
 ]
 
 bPlot = True                       # False -> compute and save only
@@ -40,12 +40,13 @@ for sCaseFile in vCaseFiles:
         dictMb = {k[3:]: npzQuant[k] for k in npzQuant.files if k.startswith("mb_")}
 
     sN, sBatchSize = mx.shape
+    
 
     # ----- error sources: reference (zero error) plus every method ----------
     dictErr = {"REF": np.zeros_like(mx)}
     for strMethod in sorted(dictMb):
-        dictErr[strMethod] = mx - dictMb[strMethod]
-
+        mb = dictMb[strMethod]
+        dictErr[strMethod] = mx - mb
     # ----- metrics ----------------------------------------------------------
     vRIdealFFT = np.fft.fft(vrIdeal)
 
@@ -61,11 +62,12 @@ for sCaseFile in vCaseFiles:
 
             vx   = mx[:, idxBatch]
             vErr = mErr[:, idxBatch]
+            vb   = mb[:, idxBatch]
 
             mResIdeal[idxBatch, :] = sa.evalN(filt.reconIdeal(vErr, vRIdealFFT),
                                               filt.reconIdeal(vx,   vRIdealFFT))
 
-            mResReal[idxBatch, :]  = sa.evalN(filt.reconReal(vErr, vr),
+            mResReal[idxBatch, :]  = sa.evalN(filt.reconReal(vErr, vr), #sa.evalN(vx - filt.reconReal(vb, vr), vx) #
                                               filt.reconReal(vx,   vr))
 
         dictRes[f"ideal_{strMethod}"] = mResIdeal
