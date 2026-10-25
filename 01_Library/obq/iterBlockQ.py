@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.linalg as scLinAlg
+import time
 import obq, globalTools, sa
 
 
@@ -31,14 +32,23 @@ def iterBlockQ(vx, vw, sM, sPhase = 'lin', sK = None, sEps = 0.05,
         sType:  'grb' (Gurobi), 'tabu' (Tabu-Search), 'sphere', or brute-force.
         bQL:    Hand the QL factors to the solver instead of (W_ext, vCe_ext).
                 Always on for 'sphere', which needs the triangular factor;
-                off by default otherwise. Kept off for 'grb' so the Gram form
-                keeps seeing the same objective value as before: MIPGap is
-                relative and the constant ||vCe_ext||^2 - ||vv||^2 would
-                shift it.
+                off by default otherwise. Setting it for 'grb' puts both
+                solvers on the same triangular problem, at the price of a
+                shifted objective value: MIPGap is relative and the constant
+                ||vCe_ext||^2 - ||vv||^2 is then missing, which makes the gap
+                effectively stricter.
 
     Returning:
         vb:         Quantized one-bit vector.
         veL2Block:  Cumulative L2 error per block (current block only).
+        vTblock:    Solve time of each block in seconds (length P). The signal
+                    time is vTblock.sum(), the mean per block vTblock.mean().
+                    For 'grb' these are model.Runtime, for 'sphere' the wall
+                    time of the tree search; the gurobipy model build is not
+                    included in either.
+        vbLimit:    True for each block in which the solver hit its time limit,
+                    i.e. the returned bits are the incumbent and not the proven
+                    optimum. All False for every sType except 'grb'.
     """
 
     swLen = len(vw)
@@ -61,10 +71,10 @@ def iterBlockQ(vx, vw, sM, sPhase = 'lin', sK = None, sEps = 0.05,
     #  Same function of the filter energy, shifted by sM: the price of a row is
     #  the benefit of the row sM positions earlier. Rows are admitted while that
     #  price stays below sEps of the filter energy, hence sK = n_lo + sM with
-    #      n_lo = max{ n : Phi(n) <= sEps ||w||^2 },  Phi(r) = sum_{n<=r} w_n^2
+    #      n_lo = min{ n : Phi(n) >  sEps ||w||^2 },  Phi(r) = sum_{n<=r} w_n^2
     #  the energy-based effective length of vw [Laakso & Valimaki, T-IM 1999].
     #
-    #  'min': energy at the front, n_lo = -1  ->  sK = sM
+    #  'min': energy at the front, n_lo = 0   ->  sK = sM
     #  'lin': energy at c = (L-1)/2           ->  sK = n_lo + sM
 
     if sK is None:
@@ -112,6 +122,8 @@ def iterBlockQ(vx, vw, sM, sPhase = 'lin', sK = None, sEps = 0.05,
     vb         = np.zeros(sxLen)
     vdPad      = np.zeros(swLen - 1 + sxLen)   # vdPad[L-1+n] = d_n, 0 for n < 0
     veL2Block  = np.zeros(sNumBlocks)
+    vTblock    = np.zeros(sNumBlocks)                   # solve time of each block
+    vbLimit    = np.zeros(sNumBlocks, dtype = bool)     # block hit the time limit
     outTxt     = ""                     # Just for the statusBar
 
     for m in range(sNumBlocks):
@@ -133,14 +145,22 @@ def iterBlockQ(vx, vw, sM, sPhase = 'lin', sK = None, sEps = 0.05,
             vvUse, sEc = vCe_ext, 0.0
 
         if sType == 'grb':
-            vbBlock, _, outTxt = obq.OptBlock(vx[sStIdx:sEndIdx], mWuse, vvUse)
-        elif sType == 'tabu':
-            vbBlock, _, outTxt = obq.OptBlockTabu(vx[sStIdx:sEndIdx], mWuse, vvUse, sNumReads=200, sTimeout=10)
+            vbBlock, _, outTxt, sTb, bLimit = obq.OptBlock(vx[sStIdx:sEndIdx], mWuse, vvUse)
         elif sType == 'sphere':
-            vbBlock, _, outTxt = obq.OptBlockSphere(vx[sStIdx:sEndIdx], mWuse, vvUse, sEc)
+            vbBlock, _, outTxt, sTb = obq.OptBlockSphere(vx[sStIdx:sEndIdx], mWuse, vvUse, sEc)
+            bLimit = False              # exhaustive search, always the exact minimizer
+        elif sType == 'tabu':
+            sT0 = time.perf_counter()
+            vbBlock, _, outTxt = obq.OptBlockTabu(vx[sStIdx:sEndIdx], mWuse, vvUse, sNumReads=200, sTimeout=10)
+            sTb, bLimit = time.perf_counter() - sT0, False
         else:
+            sT0 = time.perf_counter()
             vbBlock, _, _, _ = obq.combOptBlock_dec(vx[sStIdx:sEndIdx], mWuse, vvUse)
             outTxt = ""
+            sTb, bLimit = time.perf_counter() - sT0, False
+
+        vTblock[m] = sTb
+        vbLimit[m] = bLimit
 
         vb[sStIdx:sEndIdx] = vbBlock
         vdBlock            = vx[sStIdx:sEndIdx] - vbBlock
@@ -158,4 +178,4 @@ def iterBlockQ(vx, vw, sM, sPhase = 'lin', sK = None, sEps = 0.05,
         if (bSilent == False):
             progressBlock.update(m+1, outTxt)
 
-    return vb, veL2Block
+    return vb, veL2Block, vTblock, vbLimit

@@ -23,7 +23,7 @@ def OptBlock(vx, mW, vCe):
     model.setParam("OutputFlag", 0)     # 0 to Suppress Gurobi output
     model.setParam("MIPGap",1e-5)
     model.setParam("TimeLimit", 2)
-    model.setParam("VarBranch", 3)
+    #model.setParam("VarBranch", 3)
 
     #sOptOff = (mW.shape[0] - len(vx) + 1) // 2
     #Initialization

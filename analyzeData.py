@@ -37,7 +37,8 @@ for sCaseFile in vCaseFiles:
         vrIdeal = npzSig["vrIdeal"]        # reconstruction FIR (ideal bin mask)
 
     with np.load(sPathQuant) as npzQuant:
-        dictMb = {k[3:]: npzQuant[k] for k in npzQuant.files if k.startswith("mb_")}
+        dictMb   = {k[3:]: npzQuant[k] for k in npzQuant.files if k.startswith("mb_")}
+        dictTime = {m: fStg.getTimes(npzQuant, m) for m in dictMb}
 
     sN, sBatchSize = mx.shape
     
@@ -88,4 +89,4 @@ for sCaseFile in vCaseFiles:
 
     # ----- plot -------------------------------------------------------------
     if bPlot:
-        fStg.plotEval(mx, dictMb, dictRes, vw, sCaseFile)
+        fStg.plotEval(mx, dictMb, dictRes, vw, sCaseFile, dictTime=dictTime)

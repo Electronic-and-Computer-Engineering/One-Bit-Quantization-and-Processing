@@ -4,7 +4,8 @@
 import os
 import numpy as np
 import sys
-sys.path.append('01_Library')
+import time
+sys.path.append('../01_Library')
 
 import sg, obq, globalTools, filt
 
@@ -15,10 +16,10 @@ sInDir  = "TestBatches"
 sOutDir = "QuantBatches"
 
 vCaseFiles = [
-    "REAL_FIXED_ONBIN_20261018_161100_140495", #"REAL_FIXED_ONBIN_20260817_181320_775506",     # file names without .npz
+    "REAL_FIXED_ONBIN_20261025_121302_661850", #"REAL_FIXED_ONBIN_20260817_181320_775506",     # file names without .npz
 ]
 
-vMethods = ["SDQ","OBBQ_sph32"]              # ["SDQ", "OBAQ", "oPWM"]
+vMethods = ["SDQ","OBBQ_bf16"]              # ["SDQ", "OBAQ", "oPWM"]
 
 os.makedirs(sOutDir, exist_ok=True)
 
@@ -51,85 +52,67 @@ for sCaseFile in vCaseFiles:
     if os.path.exists(sOutPath):
         with np.load(sOutPath) as npzOld:
             dictQuant = {k: npzOld[k] for k in npzOld.files}
-        print(f"  Existing results: {list(dictQuant.keys())}")
+        print(f"  Existing results: {sorted(k[3:] for k in dictQuant if k.startswith('mb_'))}")
 
     for strMethod in vMethods:
 
         mb = np.zeros((sN, sBatchSize), dtype=float)       
-
+        vTs    = np.zeros(sBatchSize)   # signal time, methods without blocks
+        lstTb  = []                     # block times, methods with blocks
+        lstLim = []
+        
         for idxBatch in range(sBatchSize):
             if idxBatch == 0:
                 progressBlock = globalTools.SimpleProgressBar(sBatchSize, width=40, prefix = strMethod, fill="█", empty=" ", end=" ✓")                       
 
             vx = mx[:, idxBatch]
-
+            vTb, vLim, sTs = None, None, 0.0
+            
             if strMethod == "SDQ":
                 with np.errstate(divide='ignore'):
+                    sT0 = time.perf_counter()
                     vb, _, _ = obq.iterSequQ(vx, mSigDeltaFilt, 0)
-                    
+                    sTs = time.perf_counter() - sT0
+            
             elif strMethod == "SIGN":
                 with np.errstate(divide='ignore'):
-                    vb, _, _ = obq.iterSequQ(vx, mSignFilt, 0) 
-
+                    sT0 = time.perf_counter()
+                    vb, _, _ = obq.iterSequQ(vx, mSignFilt, 0)
+                    sTs = time.perf_counter() - sT0
+            
             elif strMethod == "OBAQ":
                 with np.errstate(divide='ignore'):
-                    vb, _, _ = obq.iterSequQ(vx, mfiltMatrix, 0)      
+                    sT0 = time.perf_counter()
+                    vb, _, _ = obq.iterSequQ(vx, mfiltMatrix, 0)
+                    sTs = time.perf_counter() - sT0    
             
             elif strMethod == "OBBQ_bf16":
-                    vb, _ = obq.iterBlockQ(vx, vw, 16, sPhase = 'lin', sK = None, sType = None, bSilent = True) 
+                    vb, _, vTb, vLim = obq.iterBlockQ(vx, vw, 16, sPhase = 'lin', sK = None, sType = None, bSilent = True) 
                     
             elif strMethod == "OBBQ_linG16":
-                    vb, _ = obq.iterBlockQ(vx, vw, 16, sPhase = 'lin', sK = None, sType = 'grb', bSilent = True)        
-           
-            elif strMethod == "OBBQ_bf32":
-                    vb, _ = obq.iterBlockQ(vx, vw, 32, sPhase = 'lin', sK = None, sType = None, bSilent = True) 
-                    
-            elif strMethod == "OBBQ_linG32":
-                    vb, _ = obq.iterBlockQ(vx, vw, 32, sPhase = 'lin', sK = None, sType = 'grb', bSilent = True)   
-                    
-            elif strMethod == "OBBQ_bf64":
-                    vb, _ = obq.iterBlockQ(vx, vw, 64, sPhase = 'lin', sK = None, sType = None, bSilent = True) 
-                    
-            elif strMethod == "OBBQ_linG64":
-                    vb, _ = obq.iterBlockQ(vx, vw, 64, sPhase = 'lin', sK = None, sType = 'grb', bSilent = True)           
-            
-            elif strMethod == "OBBQ_sph16":
-                    vb, _ = obq.iterBlockQ(vx, vw, 16, sPhase = 'lin', sK = None, sType = 'sphere', bSilent = True)
-
-            elif strMethod == "OBBQ_sph32":
-                    vb, _ = obq.iterBlockQ(vx, vw, 32, sPhase = 'lin', sK = None, sType = 'sphere', bSilent = True)
-
-            elif strMethod == "OBBQ_sph64":
-                    vb, _ = obq.iterBlockQ(vx, vw, 64, sPhase = 'lin', sK = None, sType = 'sphere', bSilent = True)
-
-            elif strMethod == "OBBQ_sph128":
-                    vb, _ = obq.iterBlockQ(vx, vw, 128, sPhase = 'lin', sK = None, sType = 'sphere', bSilent = True)
-
-            elif strMethod == "OBBQ_sphMin16":
-                    vb, _ = obq.iterBlockQ(vx, vwMin, 16, sPhase = 'min', sK = None, sType = 'sphere', bSilent = True)
-
-            elif strMethod == "OBBQ_sphMin32":
-                    vb, _ = obq.iterBlockQ(vx, vwMin, 32, sPhase = 'min', sK = None, sType = 'sphere', bSilent = True)
-
-            elif strMethod == "OBBQ_sphMin64":
-                    vb, _ = obq.iterBlockQ(vx, vwMin, 64, sPhase = 'min', sK = None, sType = 'sphere', bSilent = True)
-
-            elif strMethod == "OBBQ_sphMin128":
-                    vb, _ = obq.iterBlockQ(vx, vwMin, 128, sPhase = 'min', sK = None, sType = 'sphere', bSilent = True)
-
-            elif strMethod == "OBBQ_tabu":
-                    vb, _ = obq.iterBlockQ(vx, vwMin, 16, sPhase = 'min', sK = None, sType = 'tabu', bSilent = True)
-                     
+                    vb, _, vTb, vLim = obq.iterBlockQ(vx, vw, 16, sPhase = 'lin', sK = None, sType = 'grb', bSilent = True)        
+                       
             else:
                 raise ValueError(f"Unknown quantization method: '{strMethod}'")
 
             mb[:, idxBatch] = vb
+            if vTb is None:
+                vTs[idxBatch] = sTs
+            else:
+                lstTb.append(vTb)
+                lstLim.append(vLim)
             progressBlock.update(idxBatch+1)
 
         dictQuant[f"mb_{strMethod}"] = mb
-        print(f"  [{strMethod}] done -> key: mb_{strMethod}")
+        if lstTb:
+            dictQuant[f"mTb_{strMethod}"] = np.stack(lstTb, axis=1)
+            mLim = np.stack(lstLim, axis=1)
+            if mLim.any():
+                dictQuant[f"mLim_{strMethod}"] = mLim
+        else:
+            dictQuant[f"vTs_{strMethod}"] = vTs
 
     np.savez(sOutPath, **dictQuant)
-    print(f"Saved: {sCaseFile}  (keys: {list(dictQuant.keys())})\n")
+    print(f"Saved: {sCaseFile}  (methods: {sorted(k[3:] for k in dictQuant if k.startswith('mb_'))})\n")
 
 print("Done.")

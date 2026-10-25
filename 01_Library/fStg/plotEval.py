@@ -28,11 +28,16 @@ def magDb(vSig, sN, sNorm):
     """Magnitude spectrum in dB, normalized to sNorm, positive half only."""
     return 20 * sa.safelog10(np.abs(np.fft.fft(vSig, sN))[:sN // 2] / sNorm)
 
+def fmtT(sT):
+    """Seconds as ms or s, whichever reads better."""
+    return f"{sT*1e3:.1f} ms" if sT < 1.0 else f"{sT:.2f} s"
+
+
 
 # =============================================================================
 # OVERVIEW
 # =============================================================================
-def barRecon(ax, dictRes, vMethods, strRecon, strTitle):
+def barRecon(ax, dictRes, vMethods, strRecon, strTitle, dictTime=None):
     """One bar plot: best method at delta 0, all others below."""
 
     vMean  = np.array([dictRes[f"{strRecon}_{m}"][:, 1].mean() for m in vMethods])
@@ -51,6 +56,12 @@ def barRecon(ax, dictRes, vMethods, strRecon, strTitle):
         strTxt = f"{vMean[i]:.2f} dB"
         if i > 0:
             strTxt += f"\n$\\Delta$ {vDelta[i]:.2f} dB"
+        if dictTime is not None:
+            vTs, mTb, _ = dictTime.get(vLabels[i], (None, None, None))
+            if vTs is not None:
+                strTxt += f"\nTpS = {fmtT(vTs.mean())}"
+            if mTb is not None:
+                strTxt += f"\nTpB = {fmtT(mTb.mean())}"
         ax.text(i, 0, strTxt, ha='center', va='bottom', fontsize=11, bbox=dictBox)
 
     sDown = min(vDelta.min(), -1.0)
@@ -58,12 +69,12 @@ def barRecon(ax, dictRes, vMethods, strRecon, strTitle):
     ax.set_xticklabels(vLabels, fontsize=12)
     ax.set_ylabel(r'$\Delta$ mean SER (dB)', fontsize=12)
     ax.set_title(strTitle, fontsize=12)
-    ax.set_ylim([sDown * 1.3, abs(sDown) * 0.55])
+    ax.set_ylim([sDown * 1.3, abs(sDown) * 0.9])
     ax.minorticks_on()
     ax.grid(True, which='both', linestyle='--', linewidth=0.3, color='gray')
 
 
-def figOverview(dictRes, sCaseFile):
+def figOverview(dictRes, sCaseFile, dictTime=None):
     """Mean SER per method for both reconstructions -- REF excluded."""
 
     vMethods = [k[len("ideal_"):] for k in dictRes
@@ -72,9 +83,9 @@ def figOverview(dictRes, sCaseFile):
     fig = Figure(figsize=(9, 8))
     vAx = fig.subplots(2, 1)
 
-    barRecon(vAx[0], dictRes, vMethods, "ideal", "ideal reconstruction")
-    barRecon(vAx[1], dictRes, vMethods, "real",  "non-ideal reconstruction")
-
+    barRecon(vAx[0], dictRes, vMethods, "ideal", "ideal reconstruction", dictTime)
+    barRecon(vAx[1], dictRes, vMethods, "real",  "non-ideal reconstruction", dictTime)
+    
     fig.suptitle(sCaseFile)
     fig.tight_layout()
     return fig
@@ -91,10 +102,10 @@ class MethodTab(QWidget):
     realization counter lives in a QLabel below the canvas and therefore does
     not end up in the saved file.
     """
-
-    def __init__(self, strMethod, mx, mb, dictRes, vw, sYLim):
+    def __init__(self, strMethod, mx, mb, dictRes, vw, sYLim, tTime=None):
         super().__init__()
         self.strMethod = strMethod
+        self.tTime     = tTime
         self.mx        = mx
         self.mb        = mb
         self.dictRes   = dictRes
@@ -153,11 +164,15 @@ class MethodTab(QWidget):
         self.vAx[1].set_xlabel('Normalized Frequency (radians/sample)',
                                fontsize=sFsLabel)
 
+        strTpS = ""
+        if self.tTime is not None and self.tTime[0] is not None:
+            strTpS = f", TpS: {fmtT(self.tTime[0][self.idx])}"
+
         # --- panel labels inside the axes, lower right
-        for ax, strPanel, sSer in ((self.vAx[0], 'a', sSerIdeal),
-                                   (self.vAx[1], 'b', sSerReal)):
+        for ax, strPanel, sSer, strAdd in ((self.vAx[0], 'a', sSerIdeal, ""),
+                                           (self.vAx[1], 'b', sSerReal, strTpS)):
             ax.text(0.98, 0.05,
-                    f"{strPanel}) {self.strMethod}, SER: {sSer:.2f} dB",
+                    f"{strPanel}) {self.strMethod}, SER: {sSer:.2f} dB{strAdd}",
                     transform=ax.transAxes, ha='right', va='bottom',
                     fontsize=sFsBox, bbox=dictBox)
 
@@ -199,7 +214,8 @@ class EvalWindow(QMainWindow):
     strKeys = ("navigation:   \u2190 \u2192 \u2191 \u2193  =  \u00b11        "
                ",  .  =  \u00b110        home / end  =  first / last")
 
-    def __init__(self, mx, dictMb, dictRes, vw, sCaseFile, sYLim):
+
+    def __init__(self, mx, dictMb, dictRes, vw, sCaseFile, sYLim, dictTime=None):
         super().__init__()
         self.setWindowTitle(sCaseFile)
 
@@ -207,7 +223,7 @@ class EvalWindow(QMainWindow):
 
         tabOv = QWidget()
         layOv = QVBoxLayout(tabOv)
-        canOv = FigureCanvas(figOverview(dictRes, sCaseFile))
+        canOv = FigureCanvas(figOverview(dictRes, sCaseFile, dictTime))
         canOv.setFocusPolicy(Qt.NoFocus)
         layOv.addWidget(NavToolbar(canOv, tabOv))
         layOv.addWidget(canOv)
@@ -215,7 +231,7 @@ class EvalWindow(QMainWindow):
 
         self.vTabs = []
         for strMethod in sorted(dictMb):
-            tab = MethodTab(strMethod, mx, dictMb[strMethod], dictRes, vw, sYLim)
+            tab = MethodTab(strMethod, mx, dictMb[strMethod], dictRes, vw, sYLim, dictTime.get(strMethod) if dictTime else None)
             self.vTabs.append(tab)
             self.tabs.addTab(tab, strMethod)
 
@@ -246,9 +262,9 @@ class EvalWindow(QMainWindow):
 # =============================================================================
 # ENTRY POINT
 # =============================================================================
-def plotEval(mx, dictMb, dictRes, vw, sCaseFile, sYLim=(-60, 5)):
+def plotEval(mx, dictMb, dictRes, vw, sCaseFile, sYLim=(-60, 5), dictTime=None):
     """Open the evaluation window. Blocks until it is closed."""
     app = QApplication.instance() or QApplication([])
-    win = EvalWindow(mx, dictMb, dictRes, vw, sCaseFile, sYLim)
+    win = EvalWindow(mx, dictMb, dictRes, vw, sCaseFile, sYLim, dictTime)
     win.show()
     app.exec_()
